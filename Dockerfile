@@ -15,8 +15,6 @@ ENV MISE_DATA_DIR=/opt/mise \
     MISE_STATE_DIR=/opt/mise-state \
     MISE_CONFIG_FILE=/opt/gitea-runner-offline/mise.toml \
     NPM_CONFIG_CACHE=/opt/offline-cache/npm \
-    PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \
-    PIP_NO_INDEX=1 \
     MAVEN_OPTS=-Dmaven.repo.local=/opt/offline-cache/maven \
     GOPATH=/opt/offline-cache/go \
     GOMODCACHE=/opt/offline-cache/go/pkg/mod \
@@ -61,7 +59,12 @@ RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/verify-offl
     /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act; \
     /usr/local/bin/verify-offline-image
 
-ENV MISE_OFFLINE=1
+ENV MISE_OFFLINE=1 \
+    PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \
+    PIP_NO_INDEX=1 \
+    npm_config_offline=true \
+    CARGO_NET_OFFLINE=true \
+    GOPROXY=off
 
 LABEL org.opencontainers.image.title="Gitea Runner Offline" \
       org.opencontainers.image.description="Gitea Runner 3.0 with Actions, multi-version toolchains, CLIs and dependency caches preloaded" \
