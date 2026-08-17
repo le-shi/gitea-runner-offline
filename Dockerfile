@@ -25,7 +25,7 @@ RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       bash build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq openssh-client \
-      libssl-dev pkg-config rsync tar tini unzip xz-utils zip zlib1g-dev docker.io; \
+      libicu72 libssl-dev pkg-config rsync tar tini unzip xz-utils zip zlib1g-dev docker.io; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates
