@@ -50,8 +50,11 @@ COPY scripts/seed-dependencies.sh /usr/local/bin/seed-offline-dependencies
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 
 RUN chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/seed-offline-dependencies; \
-    /usr/local/bin/install-offline-toolchains; \
-    /usr/local/bin/seed-offline-dependencies
+    /usr/local/bin/install-offline-toolchains
+
+# Keep toolchain installation in a separate cacheable layer; dependency seeds
+# change more frequently and should not force every language runtime to download.
+RUN /usr/local/bin/seed-offline-dependencies
 
 # Populate the path used by act_runner/gitea-runner in the target environment.
 # The lock file pins every repository to an immutable commit SHA.
