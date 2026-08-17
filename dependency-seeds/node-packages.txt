@@ -1,0 +1,14 @@
+@angular/cli
+@nestjs/cli
+@vue/cli
+create-vite
+eslint
+lerna
+npm-check-updates
+nx
+pnpm
+prettier
+serve
+typescript
+yarn
+

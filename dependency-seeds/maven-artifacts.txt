@@ -1,0 +1,13 @@
+com.fasterxml.jackson.core:jackson-databind:2.19.2
+com.google.guava:guava:33.4.8-jre
+com.h2database:h2:2.3.232
+ch.qos.logback:logback-classic:1.5.18
+junit:junit:4.13.2
+org.apache.commons:commons-lang3:3.18.0
+org.junit.jupiter:junit-jupiter:5.13.4
+org.mockito:mockito-core:5.18.0
+org.projectlombok:lombok:1.18.38
+org.slf4j:slf4j-api:2.0.17
+org.springframework.boot:spring-boot-starter:3.5.4
+org.springframework.boot:spring-boot-starter-test:3.5.4
+

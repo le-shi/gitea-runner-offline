@@ -1,6 +1,6 @@
 # gitea-runner-offline
 
-基于 `gitea/runner:3.0` 构建的离线增强镜像，面向无公网或网络不稳定环境。GitHub Actions 会发布：
+从 `gitea/runner:3.0` 提取官方 Runner 二进制和启动脚本，并以 `debian:bookworm-slim` 作为最终运行层构建的离线增强镜像，面向无公网或网络不稳定环境。GitHub Actions 会发布：
 
 ```text
 ghcr.io/le-shi/gitea-runner:3.0-offline
