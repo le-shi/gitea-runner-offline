@@ -1,0 +1,29 @@
+name: Refresh pinned Action commits
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 1 * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve reviewed tags
+        shell: pwsh
+        run: ./scripts/update-actions.ps1
+      - name: Create update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore: refresh pinned Action commits'
+          title: 'chore: refresh pinned Action commits'
+          body: |
+            Refreshes immutable commit SHAs for the reviewed tags in `actions.lock`.
+            Review upstream release notes and the lock-file diff before merging.
+          branch: automation/refresh-actions
+          delete-branch: true
