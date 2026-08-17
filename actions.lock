@@ -16,3 +16,17 @@ docker-login-action@v3|https://github.com/docker/login-action.git|74a5d142397b4f
 docker-setup-buildx-action@v3|https://github.com/docker/setup-buildx-action.git|e468171a9de216ec08956ac3ada2f0791b6bd435|v3.11.1
 docker-build-push-action@v6|https://github.com/docker/build-push-action.git|263435318d21b8e681c14492fe198d362a7d2c83|v6.18.0
 docker-metadata-action@v5|https://github.com/docker/metadata-action.git|c1e51972afc2121e065aed6d45c65596fe445f3f|v5.8.0
+actions-github-script@v7|https://github.com/actions/github-script.git|60a0d83039c74a4aee543508d2ffcb1c3799cdea|v7.0.1
+astral-sh-setup-uv@v6|https://github.com/astral-sh/setup-uv.git|b75a909f75acd358c2196fb9a5f1299a9a8868a4|v6.7.0
+pnpm-action-setup@v4|https://github.com/pnpm/action-setup.git|a7487c7e89a18df4991f7f222e4898a00d66ddda|v4.1.0
+gradle-actions-setup-gradle@v4|https://github.com/gradle/actions.git|017a9effdb900e5b5b2fddfb590a105619dca3c3|v4.4.2
+dtolnay-rust-toolchain@stable|https://github.com/dtolnay/rust-toolchain.git|4360b52568e2003a75bf9bc1d59f33a8e3fc893c|stable
+swatinem-rust-cache@v2|https://github.com/Swatinem/rust-cache.git|9d47c6ad4b02e050fd481d890b2ea34778fd09d6|v2.7.8
+docker-setup-qemu-action@v3|https://github.com/docker/setup-qemu-action.git|29109295f81e9208d7d86ff1c6c12d2833863392|v3.6.0
+docker-bake-action@v6|https://github.com/docker/bake-action.git|3acf805d94d93a86cce4ca44798a76464a75b88c|v6.9.0
+hashicorp-setup-terraform@v3|https://github.com/hashicorp/setup-terraform.git|b9cd54a3c349d3f38e8881555d616ced269862dd|v3.1.2
+azure-setup-kubectl@v4|https://github.com/azure/setup-kubectl.git|776406bce94f63e41d621b960d78ee25c8b76ede|v4.0.1
+azure-setup-helm@v4|https://github.com/azure/setup-helm.git|1a275c3b69536ee54be43f2070a358922e12c8d4|v4.3.1
+sigstore-cosign-installer@v3|https://github.com/sigstore/cosign-installer.git|d58896d6a1865668819e1d91763c7751a165e159|v3.9.2
+aquasecurity-trivy-action@0|https://github.com/aquasecurity/trivy-action.git|b6643a29fecd7f34b3597bc6acb0a98b03d33ff8|v0.33.1
+anchore-sbom-action@v0|https://github.com/anchore/sbom-action.git|f8bdd1d8ac5e901a77a92f111440fdb1b593736b|v0.20.6

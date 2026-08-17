@@ -78,7 +78,7 @@ jobs:
           cache-from: type=gha,scope=full-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=full-${{ matrix.arch }}
           provenance: mode=max
-          sbom: true
+          sbom: false
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
       - name: Verify image contents
@@ -90,6 +90,25 @@ jobs:
             docker pull "$image"
           fi
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-image "$image"
+      - name: Generate compressed platform SBOM
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${REGISTRY}/${IMAGE_NAME}:3.0-offline-${{ matrix.arch }}"
+          mkdir -p sbom
+          docker run --rm --network none \
+            --entrypoint syft \
+            --volume "$PWD/sbom:/sbom" \
+            "$image" dir:/ --exclude /sbom \
+            --output "spdx-json=/sbom/gitea-runner-3.0-offline-${{ matrix.arch }}.spdx.json"
+          gzip -9 "sbom/gitea-runner-3.0-offline-${{ matrix.arch }}.spdx.json"
+      - name: Upload platform SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.arch }}
+          path: sbom/*.spdx.json.gz
+          if-no-files-found: error
+          compression-level: 0
 
   publish:
     needs: build-platform

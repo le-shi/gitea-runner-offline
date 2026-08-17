@@ -50,8 +50,14 @@ done
 for selector in go@1.22 go@1.23 go@1.24 go@1.25; do
   verify_toolchain "${selector}" go version
 done
-for selector in dotnet@6 dotnet@8 dotnet@9 dotnet@10; do
-  verify_toolchain "${selector}" dotnet --version
+for major in 6 8 9 10; do
+  printf 'Verifying %-22s ' "dotnet@${major}"
+  version="$("/opt/dotnet/${major}/dotnet" --version)"
+  echo "${version}"
+  case "${version}" in
+    "${major}."*) ;;
+    *) echo "Expected .NET ${major}.x, got ${version}" >&2; exit 1 ;;
+  esac
 done
 verify_toolchain rust@stable rustc --version
 
