@@ -105,6 +105,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate platform image metadata
+        id: platform-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=3.0-offline-${{ matrix.arch }}
+            type=sha,prefix=3.0-offline-${{ matrix.arch }}-
       - name: Build native platform image
         uses: docker/build-push-action@v6
         with:
@@ -112,7 +120,7 @@ jobs:
           load: ${{ github.event_name == 'pull_request' }}
           push: ${{ github.event_name != 'pull_request' }}
           platforms: ${{ matrix.platform }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:3.0-offline-${{ matrix.arch }}
+          tags: ${{ steps.platform-meta.outputs.tags }}
           cache-from: type=gha,scope=full-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=full-${{ matrix.arch }}
           provenance: mode=max
