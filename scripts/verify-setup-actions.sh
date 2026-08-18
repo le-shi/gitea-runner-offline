@@ -46,34 +46,44 @@ run_action() {
   fi
 }
 
-for major in 18 20 22 24; do
-  run_action /root/.cache/act/actions-setup-node@v4 dist/setup/index.js \
-    "INPUT_NODE-VERSION=${major}" "INPUT_CHECK-LATEST=false" \
-    "INPUT_ALWAYS-AUTH=false" "INPUT_MIRROR-ALWAYS-AUTH=false" "INPUT_CACHE="
+for action_major in v3 v4 v6; do
+  for major in 18 20 22 24; do
+    run_action "/root/.cache/act/actions-setup-node@${action_major}" dist/setup/index.js \
+      "INPUT_NODE-VERSION=${major}" "INPUT_CHECK-LATEST=false" \
+      "INPUT_ALWAYS-AUTH=false" "INPUT_MIRROR-ALWAYS-AUTH=false" "INPUT_CACHE="
+  done
 done
 
-for minor in 3.10 3.11 3.12 3.13 3.14; do
-  run_action /root/.cache/act/actions-setup-python@v5 dist/setup/index.js \
-    "INPUT_PYTHON-VERSION=${minor}" "INPUT_CHECK-LATEST=false" \
-    "INPUT_ALLOW-PRERELEASES=false" "INPUT_FREETHREADED=false" \
-    "INPUT_UPDATE-ENVIRONMENT=false"
+for action_major in v4 v5 v6; do
+  for minor in 3.10 3.11 3.12 3.13 3.14; do
+    run_action "/root/.cache/act/actions-setup-python@${action_major}" dist/setup/index.js \
+      "INPUT_PYTHON-VERSION=${minor}" "INPUT_CHECK-LATEST=false" \
+      "INPUT_ALLOW-PRERELEASES=false" "INPUT_FREETHREADED=false" \
+      "INPUT_UPDATE-ENVIRONMENT=false"
+  done
 done
 
-for minor in 1.22 1.23 1.24 1.25; do
-  run_action /root/.cache/act/actions-setup-go@v5 dist/setup/index.js \
-    "INPUT_GO-VERSION=${minor}" "INPUT_CHECK-LATEST=false" "INPUT_CACHE=false"
+for action_major in v4 v5 v6; do
+  for minor in 1.22 1.23 1.24 1.25; do
+    run_action "/root/.cache/act/actions-setup-go@${action_major}" dist/setup/index.js \
+      "INPUT_GO-VERSION=${minor}" "INPUT_CHECK-LATEST=false" "INPUT_CACHE=false"
+  done
 done
 
-for major in 8 11 17 21 25; do
-  run_action /root/.cache/act/actions-setup-java@v4 dist/setup/index.js \
-    "INPUT_DISTRIBUTION=temurin" "INPUT_JAVA-VERSION=${major}" \
-    "INPUT_JAVA-PACKAGE=jdk" "INPUT_CHECK-LATEST=false" \
-    "INPUT_OVERWRITE-SETTINGS=false"
+for action_major in v3 v4 v5; do
+  for major in 8 11 17 21 25; do
+    run_action "/root/.cache/act/actions-setup-java@${action_major}" dist/setup/index.js \
+      "INPUT_DISTRIBUTION=temurin" "INPUT_JAVA-VERSION=${major}" \
+      "INPUT_JAVA-PACKAGE=jdk" "INPUT_CHECK-LATEST=false" \
+      "INPUT_OVERWRITE-SETTINGS=false"
+  done
 done
 
-for version in 6.0.428 8.0.424 9.0.317 10.0.400; do
-  run_action /root/.cache/act/actions-setup-dotnet@v4 dist/setup/index.js \
-    "INPUT_DOTNET-VERSION=${version}" "INPUT_CACHE=false"
+for action_major in v3 v4 v5; do
+  for version in 6.0.428 8.0.424 9.0.317 10.0.400; do
+    run_action "/root/.cache/act/actions-setup-dotnet@${action_major}" dist/setup/index.js \
+      "INPUT_DOTNET-VERSION=${version}" "INPUT_CACHE=false"
+  done
 done
 
-echo "Official setup Actions resolved all 22 cached runtimes with networking disabled."
+echo "All 15 setup Action major versions resolved 66 cached runtime selections with networking disabled."

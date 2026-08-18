@@ -11,6 +11,7 @@ ARG TARGETARCH
 ARG MISE_VERSION=v2026.8.6
 ARG BUILDX_VERSION=v0.36.1
 ARG COMPOSE_VERSION=v5.5.0
+ARG DOCKER_DEFAULT_VERSION=29.7.2
 
 ENV MISE_DATA_DIR=/opt/mise \
     MISE_CACHE_DIR=/opt/offline-cache/mise \
@@ -33,7 +34,7 @@ RUN set -eux; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
       libdb-dev libffi-dev libgdbm-dev libgmp-dev libicu72 libncurses-dev libreadline-dev libssl-dev libyaml-dev \
-      openssh-client pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev docker.io; \
+      openssh-client pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates
@@ -90,6 +91,13 @@ RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/patch-offli
     /usr/local/bin/patch-offline-actions
 
 COPY scripts/install-docker-tools.sh /usr/local/bin/install-offline-docker-tools
+COPY docker-cli.lock /opt/gitea-runner-offline/docker-cli.lock
+COPY scripts/install-docker-cli.sh /usr/local/bin/install-offline-docker-cli
+COPY scripts/use-docker-version.sh /usr/local/bin/use-docker-version
+RUN chmod 0755 /usr/local/bin/install-offline-docker-cli /usr/local/bin/use-docker-version; \
+    /usr/local/bin/install-offline-docker-cli \
+      /opt/gitea-runner-offline/docker-cli.lock "${DOCKER_DEFAULT_VERSION}"
+
 RUN chmod 0755 /usr/local/bin/install-offline-docker-tools; \
     /usr/local/bin/install-offline-docker-tools "${BUILDX_VERSION}" "${COMPOSE_VERSION}"
 

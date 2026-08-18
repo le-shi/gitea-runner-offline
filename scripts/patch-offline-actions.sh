@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-action_root=/root/.cache/act/actions-setup-dotnet@v4
-install_script="${action_root}/externals/install-dotnet.sh"
-upstream_script="${install_script}.upstream"
 patch_record=/opt/gitea-runner-offline/offline-action-patches.txt
+: > "${patch_record}"
 
-test -f "${install_script}"
-mv "${install_script}" "${upstream_script}"
+for action_major in v3 v4 v5; do
+  action_root="/root/.cache/act/actions-setup-dotnet@${action_major}"
+  install_script="${action_root}/externals/install-dotnet.sh"
+  upstream_script="${install_script}.upstream"
 
-cat > "${install_script}" <<'EOF'
+  test -f "${install_script}"
+  mv "${install_script}" "${upstream_script}"
+
+  cat > "${install_script}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -56,7 +59,8 @@ echo "Use an exact SDK version already present under ${install_dir}/sdk." >&2
 exit 1
 EOF
 
-chmod 0755 "${install_script}"
-printf '%s\n' \
-  'actions/setup-dotnet: externals/install-dotnet.sh wrapped for exact-version offline reuse; original retained as install-dotnet.sh.upstream' \
-  > "${patch_record}"
+  chmod 0755 "${install_script}"
+  printf '%s\n' \
+    "actions/setup-dotnet@${action_major}: externals/install-dotnet.sh wrapped for exact-version offline reuse; original retained as install-dotnet.sh.upstream" \
+    >> "${patch_record}"
+done

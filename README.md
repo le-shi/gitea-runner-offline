@@ -34,11 +34,11 @@ GitHub Hosted Runner 无法解析公司内网域名，因此构建阶段从字�
 | Ruby | 3.2、3.3、3.4 |
 | 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |
 | DevOps CLI | Terraform、kubectl、Helm、Kustomize、Cosign、Syft、Trivy |
-| 通用工具 | Git、Git LFS、Docker CLI、Buildx 0.36、Compose 5.5、SSH、rsync、curl、jq、tar、zip、xz |
+| 通用工具 | Git、Git LFS、Docker CLI 27.5.1/28.5.2/29.7.2、Buildx 0.36、Compose 5.5、SSH、rsync、curl、jq、tar、zip、xz |
 
 Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态
-下实际执行所有 22 个已覆盖版本的 setup Action，而不只是检查目录是否存在。
+下实际执行 15 个 setup Action 主版本的 66 次运行时选择，而不只是检查目录是否存在。
 
 .NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
 `/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
@@ -46,7 +46,7 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 
 ## Action 源码缓存
 
-`actions.lock` 当前固定 27 个 Action 的不可变 Commit SHA，主要包括：
+`actions.lock` 当前固定 59 个 Action 版本与内部 mirror 兼容条目的不可变 Commit SHA，主要包括：
 
 - checkout、cache、artifact、github-script；
 - setup-node、setup-python、setup-java、setup-go、setup-dotnet；
@@ -56,6 +56,12 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 
 源码位于 `/root/.cache/act`。生产 Workflow 也应使用 Commit SHA，避免浮动 Tag
 在离线镜像构建后发生变化。
+
+Docker CLI 同时安装在 `/opt/docker/27.5.1`、`/opt/docker/28.5.2` 和
+`/opt/docker/29.7.2`，默认 `docker` 指向 29.7.2。可以使用 `docker27`、
+`docker28`、`docker29` 直接选择，也可以执行 `use-docker-version 27|28|29`
+切换默认命令。三个版本的 AMD64/ARM64 官方静态包都在 `docker-cli.lock`
+中固定 SHA-256。
 
 ## 离线能力边界
 

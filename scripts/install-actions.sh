@@ -49,6 +49,7 @@ while IFS='|' read -r cache_name repository commit friendly_ref runtime_cache_ke
   fi
   retry git --git-dir="${bare_destination}" fetch --quiet --depth 1 origin "${commit}"
   git --git-dir="${bare_destination}" update-ref "refs/tags/${requested_ref}" "${commit}"
+  git --git-dir="${bare_destination}" update-ref "refs/tags/${friendly_ref}" "${commit}"
 done <"${lock_file}"
 
 chmod -R a+rX "${cache_root}"

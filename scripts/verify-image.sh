@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
+required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -32,6 +32,8 @@ while IFS='|' read -r cache_name repository commit friendly_ref runtime_cache_ke
   test -d "${bare_repository}"
   resolved_commit="$(git --git-dir="${bare_repository}" rev-parse "refs/tags/${requested_ref}^{commit}")"
   test "${resolved_commit}" = "${commit}"
+  exact_commit="$(git --git-dir="${bare_repository}" rev-parse "refs/tags/${friendly_ref}^{commit}")"
+  test "${exact_commit}" = "${commit}"
 done <"${lock_file}"
 
 echo "Offline runner image verified: ${actual_count} Actions and required tools are present."
@@ -101,4 +103,17 @@ echo "Multi-version toolchains and dependency caches verified."
 docker buildx version
 docker compose version
 docker-compose version
+for version in 27.5.1 28.5.2 29.7.2; do
+  output="$("/opt/docker/${version}/bin/docker" --version)"
+  case "${output}" in
+    *" ${version},"*) ;;
+    *) echo "Expected Docker CLI ${version}, got: ${output}" >&2; exit 1 ;;
+  esac
+done
+for major in 27 28 29; do
+  use-docker-version "${major}" | grep -q " ${major}\."
+  docker buildx version
+  docker compose version
+done
+docker --version | grep -q ' 29.7.2,'
 echo "Verified ${offline_image_count} architecture-native offline Docker image archives."

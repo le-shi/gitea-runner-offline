@@ -33,6 +33,12 @@ jobs:
             /^[[:space:]]*(#|$)/ { next }
             NF != 3 { print "invalid offline image field count at line " NR; exit 1 }
           ' offline-images.lock
+          awk -F'|' '
+            /^[[:space:]]*(#|$)/ { next }
+            NF != 3 { print "invalid Docker CLI field count at line " NR; exit 1 }
+            $1 !~ /^[0-9]+\.[0-9]+\.[0-9]+$/ { print "invalid Docker CLI version at line " NR; exit 1 }
+            $2 !~ /^[0-9a-f]{64}$/ || $3 !~ /^[0-9a-f]{64}$/ { print "invalid Docker CLI SHA-256 at line " NR; exit 1 }
+          ' docker-cli.lock
       - name: Check pinned commits exist
         shell: bash
         run: |
