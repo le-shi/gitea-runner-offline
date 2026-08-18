@@ -11,8 +11,6 @@ ARG TARGETARCH
 ARG MISE_VERSION=v2026.8.6
 ARG BUILDX_VERSION=v0.36.1
 ARG COMPOSE_VERSION=v5.5.0
-ARG COMPOSER_VERSION=2.10.2
-ARG COMPOSER_SHA256=5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027
 
 ENV MISE_DATA_DIR=/opt/mise \
     MISE_CACHE_DIR=/opt/offline-cache/mise \
@@ -27,19 +25,15 @@ ENV MISE_DATA_DIR=/opt/mise \
     CARGO_HOME=/opt/offline-cache/cargo \
     GEM_HOME=/opt/offline-cache/ruby/gems \
     GEM_SPEC_CACHE=/opt/offline-cache/ruby/specs \
-    COMPOSER_HOME=/opt/offline-cache/composer/home \
-    COMPOSER_CACHE_DIR=/opt/offline-cache/composer/cache \
     DOTNET_ROOT=/opt/dotnet/10 \
-    PATH=/opt/venvs/python-tools/bin:/opt/offline-cache/go/bin:/opt/offline-cache/cargo/bin:/opt/offline-cache/ruby/gems/bin:/opt/offline-cache/composer/home/vendor/bin:/opt/mise/shims:/opt/mise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    PATH=/opt/venvs/python-tools/bin:/opt/offline-cache/go/bin:/opt/offline-cache/cargo/bin:/opt/offline-cache/ruby/gems/bin:/opt/mise/shims:/opt/mise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
-      libtool openssh-client pkg-config re2c rsync skopeo tar tini unzip xz-utils zip docker.io \
-      libargon2-dev libbz2-dev libcurl4-openssl-dev libdb-dev libffi-dev libfreetype6-dev libgd-dev libgdbm-dev libgmp-dev \
-      libicu-dev libjpeg-dev libldap2-dev libncurses-dev libonig-dev libpng-dev libreadline-dev \
-      libsodium-dev libsqlite3-dev libssl-dev libwebp-dev libxml2-dev libxslt1-dev libyaml-dev libzip-dev zlib1g-dev; \
+      libdb-dev libffi-dev libgdbm-dev libgmp-dev libncurses-dev libreadline-dev libssl-dev libyaml-dev \
+      openssh-client pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev docker.io; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates
@@ -61,16 +55,14 @@ COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
 COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
 COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
-COPY scripts/install-composer.sh /usr/local/bin/install-offline-composer
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/install-offline-composer; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains; \
-    /usr/local/bin/install-offline-composer "${COMPOSER_VERSION}" "${COMPOSER_SHA256}"; \
     /usr/local/bin/install-offline-dotnet; \
     /usr/local/bin/populate-offline-toolcache
 

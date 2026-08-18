@@ -37,13 +37,4 @@ MISE_OFFLINE=1 mise exec ruby@3.4 -- gem install --local --no-document \
   --install-dir "${work_root}/ruby" "${rake_gem}"
 test -x "${work_root}/ruby/bin/rake"
 
-# Composer replays its lock file using only the bundled dist cache.
-mkdir -p "${work_root}/composer"
-cp /opt/offline-cache/composer/home/composer.json \
-  /opt/offline-cache/composer/home/composer.lock "${work_root}/composer/"
-(cd "${work_root}/composer" && COMPOSER_DISABLE_NETWORK=1 \
-  MISE_OFFLINE=1 mise exec php@8.4 -- composer install \
-    --no-interaction --no-progress --no-scripts)
-test -x "${work_root}/composer/vendor/bin/phpunit"
-
-echo "npm, pip, Maven, Go, Cargo, RubyGems and Composer caches passed network-disabled checks."
+echo "npm, pip, Maven, Go, Cargo and RubyGems caches passed network-disabled checks."

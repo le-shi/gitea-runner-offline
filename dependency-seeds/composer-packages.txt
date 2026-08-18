@@ -1,4 +1,0 @@
-# Common PHP test, static-analysis and formatting tools.
-phpunit/phpunit
-phpstan/phpstan
-friendsofphp/php-cs-fixer
