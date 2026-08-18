@@ -73,3 +73,7 @@ done
 verify_toolchain rust@stable rustc --version
 
 echo "Multi-version toolchains and dependency caches verified."
+
+docker buildx version
+docker compose version
+docker-compose version

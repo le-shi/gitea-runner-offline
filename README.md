@@ -25,7 +25,7 @@ Runner 上构建，并用 `docker run --network none` 做断网验证。
 | Rust | stable |
 | 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |
 | DevOps CLI | Terraform、kubectl、Helm、Kustomize、Cosign、Syft、Trivy |
-| 通用工具 | Git、Git LFS、Docker CLI、SSH、rsync、curl、jq、tar、zip、xz |
+| 通用工具 | Git、Git LFS、Docker CLI、Buildx 0.36、Compose 5.5、SSH、rsync、curl、jq、tar、zip、xz |
 
 Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态

@@ -9,6 +9,8 @@ USER root
 ARG RUNNER_IMAGE
 ARG TARGETARCH
 ARG MISE_VERSION=v2026.8.6
+ARG BUILDX_VERSION=v0.36.1
+ARG COMPOSE_VERSION=v5.5.0
 
 ENV MISE_DATA_DIR=/opt/mise \
     MISE_CACHE_DIR=/opt/offline-cache/mise \
@@ -79,6 +81,10 @@ COPY scripts/patch-offline-actions.sh /usr/local/bin/patch-offline-actions
 RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/patch-offline-actions; \
     /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act; \
     /usr/local/bin/patch-offline-actions
+
+COPY scripts/install-docker-tools.sh /usr/local/bin/install-offline-docker-tools
+RUN chmod 0755 /usr/local/bin/install-offline-docker-tools; \
+    /usr/local/bin/install-offline-docker-tools "${BUILDX_VERSION}" "${COMPOSE_VERSION}"
 
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
