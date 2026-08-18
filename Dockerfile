@@ -32,7 +32,7 @@ RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
-      libdb-dev libffi-dev libgdbm-dev libgmp-dev libncurses-dev libreadline-dev libssl-dev libyaml-dev \
+      libdb-dev libffi-dev libgdbm-dev libgmp-dev libicu72 libncurses-dev libreadline-dev libssl-dev libyaml-dev \
       openssh-client pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev docker.io; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
