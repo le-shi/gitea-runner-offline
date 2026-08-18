@@ -90,6 +90,7 @@ jobs:
             docker pull "$image"
           fi
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-image "$image"
+          docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-setup-actions "$image"
       - name: Generate compressed platform SBOM
         shell: bash
         run: |

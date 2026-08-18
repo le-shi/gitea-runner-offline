@@ -47,16 +47,13 @@ RUN set -eux; \
 COPY actions.lock /opt/gitea-runner-offline/actions.lock
 COPY mise.toml /opt/gitea-runner-offline/mise.toml
 COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
-COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
 COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
 COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
-COPY scripts/seed-dependencies.sh /usr/local/bin/seed-offline-dependencies
-COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/seed-offline-dependencies; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
@@ -66,8 +63,10 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
 
 # Keep toolchain installation in a separate cacheable layer; dependency seeds
 # change more frequently and should not force every language runtime to download.
+COPY scripts/seed-dependencies.sh /usr/local/bin/seed-offline-dependencies
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
+    chmod 0755 /usr/local/bin/seed-offline-dependencies; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
@@ -75,9 +74,15 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
 
 # Populate the path used by act_runner/gitea-runner in the target environment.
 # The lock file pins every repository to an immutable commit SHA.
-RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/verify-offline-image; \
-    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act; \
-    /usr/local/bin/verify-offline-image
+COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
+RUN chmod 0755 /usr/local/bin/install-offline-actions; \
+    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act
+
+COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
+COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
+RUN --network=none chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions; \
+    /usr/local/bin/verify-offline-image; \
+    /usr/local/bin/verify-offline-setup-actions
 
 ENV MISE_OFFLINE=1 \
     PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \
