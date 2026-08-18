@@ -17,9 +17,10 @@ while IFS='|' read -r archive_name source_image local_tag; do
   case "${archive_name}" in ''|'#'*) continue ;; esac
   archive_path="${archive_root}/${archive_name}-${TARGETARCH}.tar"
   digest="$(skopeo inspect --override-os linux --override-arch "${TARGETARCH}" --format '{{.Digest}}' "docker://${source_image}")"
+  digest_reference="${source_image%:*}@${digest}"
   printf '%s|%s|%s|%s\n' "${archive_name}" "${source_image}" "${local_tag}" "${digest}" >> "${manifest_file}"
   skopeo copy --retry-times 5 --override-os linux --override-arch "${TARGETARCH}" \
-    "docker://${source_image}@${digest}" "docker-archive:${archive_path}:${local_tag}"
+    "docker://${digest_reference}" "docker-archive:${archive_path}:${local_tag}"
 done < "${lock_file}"
 
 sha256sum "${archive_root}"/*.tar > "${archive_root}/SHA256SUMS"
