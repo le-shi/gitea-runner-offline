@@ -85,5 +85,5 @@ export COMPOSER_HOME="${cache_root}/composer/home"
 export COMPOSER_CACHE_DIR="${cache_root}/composer/cache"
 mkdir -p "${COMPOSER_HOME}" "${COMPOSER_CACHE_DIR}"
 mapfile -t composer_packages < <(grep -Ev '^[[:space:]]*(#|$)' "${seed_root}/composer-packages.txt")
-retry mise exec php@8.4 composer@2 -- composer global require --no-interaction --no-progress \
+retry mise exec php@8.4 -- composer global require --no-interaction --no-progress \
   "${composer_packages[@]}"

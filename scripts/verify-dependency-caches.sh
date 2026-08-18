@@ -42,7 +42,7 @@ mkdir -p "${work_root}/composer"
 cp /opt/offline-cache/composer/home/composer.json \
   /opt/offline-cache/composer/home/composer.lock "${work_root}/composer/"
 (cd "${work_root}/composer" && COMPOSER_DISABLE_NETWORK=1 \
-  MISE_OFFLINE=1 mise exec php@8.4 composer@2 -- composer install \
+  MISE_OFFLINE=1 mise exec php@8.4 -- composer install \
     --no-interaction --no-progress --no-scripts)
 test -x "${work_root}/composer/vendor/bin/phpunit"
 

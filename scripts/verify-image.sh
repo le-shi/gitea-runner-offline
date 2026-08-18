@@ -86,7 +86,7 @@ done
 for minor in 8.1 8.2 8.3 8.4 8.5; do
   verify_toolchain "php@${minor}" php --version
 done
-verify_toolchain composer@2 composer --version
+mise exec php@8.4 -- composer --version
 
 echo "Multi-version toolchains and dependency caches verified."
 

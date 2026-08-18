@@ -11,6 +11,8 @@ ARG TARGETARCH
 ARG MISE_VERSION=v2026.8.6
 ARG BUILDX_VERSION=v0.36.1
 ARG COMPOSE_VERSION=v5.5.0
+ARG COMPOSER_VERSION=2.10.2
+ARG COMPOSER_SHA256=5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027
 
 ENV MISE_DATA_DIR=/opt/mise \
     MISE_CACHE_DIR=/opt/offline-cache/mise \
@@ -59,14 +61,16 @@ COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
 COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
 COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
+COPY scripts/install-composer.sh /usr/local/bin/install-offline-composer
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/install-offline-composer; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains; \
+    /usr/local/bin/install-offline-composer "${COMPOSER_VERSION}" "${COMPOSER_SHA256}"; \
     /usr/local/bin/install-offline-dotnet; \
     /usr/local/bin/populate-offline-toolcache
 
