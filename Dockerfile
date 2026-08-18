@@ -23,14 +23,21 @@ ENV MISE_DATA_DIR=/opt/mise \
     GOPATH=/opt/offline-cache/go \
     GOMODCACHE=/opt/offline-cache/go/pkg/mod \
     CARGO_HOME=/opt/offline-cache/cargo \
+    GEM_HOME=/opt/offline-cache/ruby/gems \
+    GEM_SPEC_CACHE=/opt/offline-cache/ruby/specs \
+    COMPOSER_HOME=/opt/offline-cache/composer/home \
+    COMPOSER_CACHE_DIR=/opt/offline-cache/composer/cache \
     DOTNET_ROOT=/opt/dotnet/10 \
-    PATH=/opt/venvs/python-tools/bin:/opt/offline-cache/go/bin:/opt/offline-cache/cargo/bin:/opt/mise/shims:/opt/mise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    PATH=/opt/venvs/python-tools/bin:/opt/offline-cache/go/bin:/opt/offline-cache/cargo/bin:/opt/offline-cache/ruby/gems/bin:/opt/offline-cache/composer/home/vendor/bin:/opt/mise/shims:/opt/mise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      bash build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq openssh-client \
-      libicu72 libssl-dev pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev docker.io; \
+      autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
+      libtool openssh-client pkg-config re2c rsync skopeo tar tini unzip xz-utils zip docker.io \
+      libargon2-dev libbz2-dev libcurl4-openssl-dev libdb-dev libffi-dev libfreetype6-dev libgdbm-dev libgmp-dev \
+      libicu-dev libjpeg-dev libldap2-dev libncurses-dev libonig-dev libpng-dev libreadline-dev \
+      libsodium-dev libsqlite3-dev libssl-dev libwebp-dev libxml2-dev libxslt1-dev libyaml-dev libzip-dev zlib1g-dev; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates

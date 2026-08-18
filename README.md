@@ -23,6 +23,9 @@ Runner 上构建，并用 `docker run --network none` 做断网验证。
 | Go | 1.22、1.23、1.24、1.25 |
 | .NET SDK | 6、8、9、10 |
 | Rust | stable |
+| Ruby | 3.2、3.3、3.4、3.5 |
+| PHP | 8.1、8.2、8.3、8.4、8.5 |
+| PHP dependency manager | Composer 2 |
 | 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |
 | DevOps CLI | Terraform、kubectl、Helm、Kustomize、Cosign、Syft、Trivy |
 | 通用工具 | Git、Git LFS、Docker CLI、Buildx 0.36、Compose 5.5、SSH、rsync、curl、jq、tar、zip、xz |
@@ -78,6 +81,8 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 /opt/offline-cache/maven
 /opt/offline-cache/go
 /opt/offline-cache/cargo
+/opt/offline-cache/ruby
+/opt/offline-cache/composer
 /opt/offline-cache/mise
 ```
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker mise node npm python java go dotnet rustc cargo mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
+required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop php composer phpunit phpstan php-cs-fixer mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -32,6 +32,8 @@ test -d /opt/offline-cache/pip-wheelhouse
 test -d /opt/offline-cache/maven
 test -d /opt/offline-cache/go/pkg/mod
 test -d /opt/offline-cache/cargo/registry
+test -d /opt/offline-cache/ruby/gems/cache
+test -s /opt/offline-cache/composer/home/composer.lock
 test -s /opt/offline-images/images.resolved.txt
 test -s /opt/offline-images/SHA256SUMS
 (cd /opt/offline-images && sha256sum --check SHA256SUMS)
@@ -78,6 +80,13 @@ for major in 6 8 9 10; do
   esac
 done
 verify_toolchain rust@stable rustc --version
+for minor in 3.2 3.3 3.4 3.5; do
+  verify_toolchain "ruby@${minor}" ruby --version
+done
+for minor in 8.1 8.2 8.3 8.4 8.5; do
+  verify_toolchain "php@${minor}" php --version
+done
+verify_toolchain composer@2 composer --version
 
 echo "Multi-version toolchains and dependency caches verified."
 

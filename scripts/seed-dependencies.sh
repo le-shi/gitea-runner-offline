@@ -18,7 +18,7 @@ retry() {
 }
 
 mkdir -p "${cache_root}/npm" "${cache_root}/pip-wheelhouse" "${cache_root}/maven" \
-  "${cache_root}/go" "${cache_root}/cargo"
+  "${cache_root}/go" "${cache_root}/cargo" "${cache_root}/ruby" "${cache_root}/composer"
 
 # Install popular JS tooling and retain npm's tarball cache for offline installs.
 mapfile -t node_packages < <(grep -Ev '^[[:space:]]*(#|$)' "${seed_root}/node-packages.txt")
@@ -70,3 +70,20 @@ while IFS= read -r crate; do
   case "${crate}" in ''|'#'*) continue ;; esac
   retry mise exec rust@stable -- cargo install --locked "${crate}"
 done < "${seed_root}/rust-tools.txt"
+
+# Retain downloaded gem archives and a locked Composer installation so both
+# ecosystems can replay dependency installation without network access.
+export GEM_HOME="${cache_root}/ruby/gems"
+export GEM_SPEC_CACHE="${cache_root}/ruby/specs"
+mkdir -p "${GEM_HOME}" "${GEM_SPEC_CACHE}"
+while IFS= read -r gem_name; do
+  case "${gem_name}" in ''|'#'*) continue ;; esac
+  retry mise exec ruby@3.4 -- gem install --no-document "${gem_name}"
+done < "${seed_root}/ruby-gems.txt"
+
+export COMPOSER_HOME="${cache_root}/composer/home"
+export COMPOSER_CACHE_DIR="${cache_root}/composer/cache"
+mkdir -p "${COMPOSER_HOME}" "${COMPOSER_CACHE_DIR}"
+mapfile -t composer_packages < <(grep -Ev '^[[:space:]]*(#|$)' "${seed_root}/composer-packages.txt")
+retry mise exec php@8.4 composer@2 -- composer global require --no-interaction --no-progress \
+  "${composer_packages[@]}"

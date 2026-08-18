@@ -30,4 +30,20 @@ test -n "$(find /opt/offline-cache/cargo/registry/cache -name '*.crate' -print -
 GOPROXY=off go version -m /opt/offline-cache/go/bin/goimports >/dev/null
 CARGO_NET_OFFLINE=true cargo install --list | grep -q '^cargo-audit '
 
-echo "npm, pip, Maven, Go and Cargo caches passed network-disabled checks."
+# RubyGems must reinstall a cached gem archive without contacting rubygems.org.
+rake_gem="$(find /opt/offline-cache/ruby/gems/cache -maxdepth 1 -name 'rake-*.gem' -print -quit)"
+test -n "${rake_gem}"
+MISE_OFFLINE=1 mise exec ruby@3.4 -- gem install --local --no-document \
+  --install-dir "${work_root}/ruby" "${rake_gem}"
+test -x "${work_root}/ruby/bin/rake"
+
+# Composer replays its lock file using only the bundled dist cache.
+mkdir -p "${work_root}/composer"
+cp /opt/offline-cache/composer/home/composer.json \
+  /opt/offline-cache/composer/home/composer.lock "${work_root}/composer/"
+(cd "${work_root}/composer" && COMPOSER_DISABLE_NETWORK=1 \
+  MISE_OFFLINE=1 mise exec php@8.4 composer@2 -- composer install \
+    --no-interaction --no-progress --no-scripts)
+test -x "${work_root}/composer/vendor/bin/phpunit"
+
+echo "npm, pip, Maven, Go, Cargo, RubyGems and Composer caches passed network-disabled checks."
