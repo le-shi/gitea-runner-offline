@@ -1,5 +1,4 @@
-github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-golang.org/x/tools/cmd/goimports@latest
-honnef.co/go/tools/cmd/staticcheck@latest
-mvdan.cc/gofumpt@latest
-
+github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+golang.org/x/tools/cmd/goimports@v0.49.0
+honnef.co/go/tools/cmd/staticcheck@v0.7.0
+mvdan.cc/gofumpt@v0.11.0

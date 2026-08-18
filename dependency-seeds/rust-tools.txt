@@ -1,4 +1,3 @@
-cargo-audit
-cargo-edit
-cargo-outdated
-
+cargo-audit@0.22.2
+cargo-edit@0.13.13
+cargo-outdated@0.19.0

@@ -22,10 +22,10 @@ mkdir -p "${cache_root}/npm" "${cache_root}/pip-wheelhouse" "${cache_root}/maven
 
 # Install popular JS tooling and retain npm's tarball cache for offline installs.
 mapfile -t node_packages < <(grep -Ev '^[[:space:]]*(#|$)' "${seed_root}/node-packages.txt")
-retry env NPM_CONFIG_CACHE="${cache_root}/npm" mise exec node@24 -- npm install --global "${node_packages[@]}"
+retry env NPM_CONFIG_CACHE="${cache_root}/npm" mise exec node@24.19.0 -- npm install --global "${node_packages[@]}"
 
 # Use Python 3.12 for the shared automation environment and preserve wheels.
-mise exec python@3.12 -- python -m venv /opt/venvs/python-tools
+mise exec python@3.12.14 -- python -m venv /opt/venvs/python-tools
 retry /opt/venvs/python-tools/bin/pip install --retries 10 --timeout 60 --upgrade pip setuptools wheel
 retry /opt/venvs/python-tools/bin/pip download --retries 10 --timeout 60 --dest "${cache_root}/pip-wheelhouse" \
   --requirement "${seed_root}/python-requirements.txt"
@@ -37,7 +37,7 @@ export MAVEN_OPTS="-Dmaven.repo.local=${cache_root}/maven"
 download_maven_artifact() {
   artifact="$1"
   attempt=1
-  while ! mise exec maven@3.9 -- mvn --batch-mode --no-transfer-progress \
+  while ! mise exec maven@3.9.16 -- mvn --batch-mode --no-transfer-progress \
     -Dmaven.wagon.http.retryHandler.count=5 \
     org.apache.maven.plugins:maven-dependency-plugin:3.7.0:get -Dartifact="${artifact}"; do
     if [ "${attempt}" -ge 5 ]; then
@@ -59,7 +59,7 @@ export GOBIN="${GOPATH}/bin"
 mkdir -p "${GOBIN}"
 while IFS= read -r package; do
   case "${package}" in ''|'#'*) continue ;; esac
-  retry mise exec go@1.25 -- go install "${package}"
+  retry mise exec go@1.25.13 -- go install "${package}"
   tool_name="${package%%@*}"
   tool_name="${tool_name##*/}"
   test -x "${GOBIN}/${tool_name}"
@@ -76,7 +76,9 @@ done < "${seed_root}/rust-tools.txt"
 export GEM_HOME="${cache_root}/ruby/gems"
 export GEM_SPEC_CACHE="${cache_root}/ruby/specs"
 mkdir -p "${GEM_HOME}" "${GEM_SPEC_CACHE}"
-while IFS= read -r gem_name; do
+while IFS=: read -r gem_name gem_version; do
   case "${gem_name}" in ''|'#'*) continue ;; esac
-  retry mise exec ruby@3.4 -- gem install --no-document "${gem_name}"
+  test -n "${gem_version}"
+  retry mise exec ruby@3.4.10 -- gem install --no-document \
+    --version "${gem_version}" "${gem_name}"
 done < "${seed_root}/ruby-gems.txt"

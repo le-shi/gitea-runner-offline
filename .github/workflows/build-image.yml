@@ -39,6 +39,13 @@ jobs:
             $1 !~ /^[0-9]+\.[0-9]+\.[0-9]+$/ { print "invalid Docker CLI version at line " NR; exit 1 }
             $2 !~ /^[0-9a-f]{64}$/ || $3 !~ /^[0-9a-f]{64}$/ { print "invalid Docker CLI SHA-256 at line " NR; exit 1 }
           ' docker-cli.lock
+          grep -Eqv '^[[:space:]]*(#|$)' dependency-seeds/*.txt
+          ! grep -REn '(^|[@:=])(latest|stable)$' dependency-seeds
+          awk '!/^[[:space:]]*(#|$)/ && $0 !~ /^(@[^/]+\/[^@]+|[^@]+)@[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$/ { print "invalid npm seed at line " NR; exit 1 }' dependency-seeds/node-packages.txt
+          awk '!/^[[:space:]]*(#|$)/ && $0 !~ /^[A-Za-z0-9_.-]+==[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$/ { print "invalid Python seed at line " NR; exit 1 }' dependency-seeds/python-requirements.txt
+          awk '!/^[[:space:]]*(#|$)/ && $0 !~ /^.+@v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$/ { print "invalid Go seed at line " NR; exit 1 }' dependency-seeds/go-tools.txt
+          awk '!/^[[:space:]]*(#|$)/ && $0 !~ /^[A-Za-z0-9_-]+@[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$/ { print "invalid Rust seed at line " NR; exit 1 }' dependency-seeds/rust-tools.txt
+          awk '!/^[[:space:]]*(#|$)/ && $0 !~ /^[A-Za-z0-9_-]+:[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$/ { print "invalid Ruby seed at line " NR; exit 1 }' dependency-seeds/ruby-gems.txt
       - name: Check pinned commits exist
         shell: bash
         run: |

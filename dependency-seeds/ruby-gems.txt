@@ -1,6 +1,6 @@
 # Common Ruby build, test and lint tools.
-bundler
-rake
-rspec
-rubocop
-solargraph
+bundler:4.0.18
+rake:13.4.2
+rspec:3.13.2
+rubocop:1.89.0
+solargraph:0.60.3
