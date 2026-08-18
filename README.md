@@ -102,6 +102,32 @@ Docker CLI 同时安装在 `/opt/docker/27.5.1`、`/opt/docker/28.5.2` 和
 
 ## 使用
 
+可直接复制的部署与多语言 Workflow 示例位于：
+
+- `examples/docker-compose.yaml`
+- `examples/runner.env.example`
+- `examples/workflows/multi-language-offline.yml`
+
+快速启动：
+
+```bash
+cd examples
+cp runner.env.example .env
+# 编辑 .env 后启动；首次启动会先导入内置 Docker 镜像归档。
+docker compose up -d
+```
+
+将 Workflow 复制到业务仓库：
+
+```bash
+mkdir -p .gitea/workflows
+cp examples/workflows/multi-language-offline.yml \
+  .gitea/workflows/offline-ci.yml
+```
+
+示例中的依赖安装只会命中镜像已经预热的缓存。业务项目自己的 npm、PyPI、
+NuGet、Maven、Go、Cargo 或 Gem 依赖仍需提前加入镜像，或由内网制品库提供。
+
 ```yaml
 services:
   runner:

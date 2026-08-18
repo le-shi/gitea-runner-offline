@@ -1,0 +1,213 @@
+name: 多语言离线构建示例
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# 离线模式的公共环境变量。项目自己的锁文件和依赖必须已包含在镜像缓存中。
+env:
+  MISE_OFFLINE: "1"
+  PIP_NO_INDEX: "1"
+  PIP_FIND_LINKS: /opt/offline-cache/pip-wheelhouse
+  npm_config_offline: "true"
+  npm_config_cache: /opt/offline-cache/npm
+  GOPROXY: "off"
+  CARGO_NET_OFFLINE: "true"
+  MAVEN_OPTS: -Dmaven.repo.local=/opt/offline-cache/maven
+
+jobs:
+  node:
+    name: Node.js 22
+    runs-on: offline
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4.4.0
+
+      # Action 版本和 Node 版本相互独立；两者都建议使用完整版本号。
+      - name: 选择 Node.js 22.23.2
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: 22.23.2
+          check-latest: false
+          cache: ""
+
+      - name: 离线安装和测试
+        shell: bash
+        run: |
+          node --version
+          npm --version
+          if [ -f package-lock.json ]; then
+            npm ci --offline
+            npm test --if-present
+          else
+            echo "未发现 package-lock.json，跳过项目依赖安装。"
+          fi
+
+  python:
+    name: Python 3.12
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 选择 Python 3.12.14
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: 3.12.14
+          check-latest: false
+
+      - name: 从本地 wheelhouse 安装并测试
+        shell: bash
+        run: |
+          python --version
+          if [ -f requirements.txt ]; then
+            python -m pip install --no-index \
+              --find-links /opt/offline-cache/pip-wheelhouse \
+              -r requirements.txt
+          fi
+          if [ -d tests ]; then
+            python -m pytest
+          else
+            echo "未发现 tests 目录，跳过 pytest。"
+          fi
+
+  java:
+    name: Java 21 和 Maven
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 选择 Temurin JDK 21
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: 21.0.12
+          check-latest: false
+          cache: ""
+
+      - name: Maven 离线构建
+        shell: bash
+        run: |
+          java -version
+          if [ -f pom.xml ]; then
+            mise exec maven@3.9.16 -- mvn --offline verify
+          else
+            echo "未发现 pom.xml，跳过 Maven 构建。"
+          fi
+
+  go:
+    name: Go 1.25
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 选择 Go 1.25.13
+        uses: actions/setup-go@v6.5.0
+        with:
+          go-version: 1.25.13
+          check-latest: false
+          cache: false
+
+      - name: Go 离线测试
+        shell: bash
+        run: |
+          go version
+          if [ -f go.mod ]; then
+            GOPROXY=off go test ./...
+          else
+            echo "未发现 go.mod，跳过 Go 测试。"
+          fi
+
+  dotnet:
+    name: .NET 8
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 选择完整 .NET SDK 版本
+        uses: actions/setup-dotnet@v5.4.0
+        with:
+          dotnet-version: 8.0.424
+          cache: false
+
+      - name: .NET 离线构建
+        shell: bash
+        run: |
+          dotnet --version
+          project="$(find . -maxdepth 2 \( -name '*.sln' -o -name '*.csproj' \) -print -quit)"
+          if [ -n "${project}" ]; then
+            dotnet restore "${project}" --ignore-failed-sources
+            dotnet test "${project}" --no-restore
+          else
+            echo "未发现 sln/csproj，跳过 .NET 构建。"
+          fi
+
+  rust:
+    name: Rust 1.97.1
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 使用镜像内固定 Rust 工具链
+        shell: bash
+        run: |
+          mise exec rust@1.97.1 -- rustc --version
+          if [ -f Cargo.toml ]; then
+            CARGO_NET_OFFLINE=true mise exec rust@1.97.1 -- cargo test --locked
+          else
+            echo "未发现 Cargo.toml，跳过 Rust 测试。"
+          fi
+
+  ruby:
+    name: Ruby 3.4
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 使用镜像内固定 Ruby 工具链
+        shell: bash
+        run: |
+          mise exec ruby@3.4.10 -- ruby --version
+          if [ -f Gemfile.lock ]; then
+            mise exec ruby@3.4.10 -- bundle config set --local cache_all true
+            mise exec ruby@3.4.10 -- bundle install --local
+            mise exec ruby@3.4.10 -- bundle exec rake
+          else
+            echo "未发现 Gemfile.lock，跳过 Ruby 依赖安装。"
+          fi
+
+  docker:
+    name: Docker 27/28/29
+    # host 模式直接使用 Runner 容器挂载的 Docker socket。
+    # 不执行 use-docker-version，避免并发 Job 修改全局 docker 软链接。
+    runs-on: offline-host
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 查看三个 Docker CLI 版本
+        shell: bash
+        run: |
+          docker27 --version
+          docker28 --version
+          docker29 --version
+          docker29 buildx version
+          docker29 compose version
+
+      - name: 使用 Docker 29 构建
+        shell: bash
+        run: |
+          if [ -f Dockerfile ]; then
+            docker29 build --pull=false -t example:${GITHUB_SHA:-local} .
+          else
+            echo "未发现 Dockerfile，跳过镜像构建。"
+          fi
+
+  direct-mise:
+    name: 不使用 setup Action 的精确版本选择
+    runs-on: offline
+    steps:
+      - uses: actions/checkout@v4.4.0
+      - name: 同一 Job 调用多个固定工具版本
+        shell: bash
+        run: |
+          mise exec node@18.20.8 -- node --version
+          mise exec node@24.19.0 -- node --version
+          mise exec python@3.10.21 -- python --version
+          mise exec python@3.14.7 -- python --version
+          mise exec go@1.22.12 -- go version
+          mise exec java@temurin-17.0.20+8 -- java -version
+          mise exec terraform@1.15.8 -- terraform version
+
