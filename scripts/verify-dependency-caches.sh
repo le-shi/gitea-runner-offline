@@ -6,9 +6,9 @@ trap 'rm -rf "${work_root}"' EXIT
 
 # npm must be able to materialize a real package tarball from its cache.
 mkdir -p "${work_root}/npm"
-global_node_modules="$(npm root --global)"
-typescript_version="$(node -p "require('${global_node_modules}/typescript/package.json').version")"
-(cd "${work_root}/npm" && npm pack --offline "typescript@${typescript_version}" >/dev/null)
+global_node_modules="$(MISE_OFFLINE=1 mise exec node@24 -- npm root --global)"
+typescript_version="$(MISE_OFFLINE=1 mise exec node@24 -- node -p "require('${global_node_modules}/typescript/package.json').version")"
+(cd "${work_root}/npm" && MISE_OFFLINE=1 mise exec node@24 -- npm pack --offline "typescript@${typescript_version}" >/dev/null)
 test -n "$(find "${work_root}/npm" -name 'typescript-*.tgz' -print -quit)"
 
 # pip must resolve and copy wheels without consulting an index.
