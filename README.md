@@ -1,53 +1,85 @@
 # gitea-runner-offline
 
-从 `gitea/runner:3.0` 提取官方 Runner 二进制和启动脚本，并以 `debian:bookworm-slim` 作为最终运行层构建的离线增强镜像，面向无公网或网络不稳定环境。GitHub Actions 会发布：
+面向无公网或网络不稳定环境的 Gitea Runner 3.0 增强镜像。最终运行层为
+`debian:bookworm-slim`；`gitea/runner:3.0` 只用于提取官方 Runner 二进制和
+启动脚本，不以 Alpine 作为最终基础镜像。
+
+发布地址：
 
 ```text
 ghcr.io/le-shi/gitea-runner:3.0-offline
 ```
 
-## 包含内容
+镜像同时发布 `linux/amd64` 和 `linux/arm64`，GitHub Workflow 会在两种原生
+Runner 上构建，并用 `docker run --network none` 做断网验证。
 
-- Gitea Runner 3.0 上游镜像。
-- Git、Git LFS、curl、jq、OpenSSH Client、rsync、tar、zip、unzip、xz 等常用工具。
-- `actions.lock` 中固定 Commit SHA 的常用 Action 源码。
-- AMD64 和 ARM64 多架构构建。
-- GitHub Actions 构建缓存、SBOM 和 Provenance。
+## 预装工具链
 
-预置 Action 包括 checkout、cache、artifact、主要 `setup-*` 和 Docker Buildx/Push 系列。完整版本见 `actions.lock`。
+| 类别 | 版本 |
+| --- | --- |
+| Node.js | 18、20、22、24 |
+| Python | 3.10、3.11、3.12、3.13、3.14 |
+| Temurin JDK | 8、11、17、21、25 |
+| Go | 1.22、1.23、1.24、1.25 |
+| .NET SDK | 6、8、9、10 |
+| Rust | stable |
+| 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |
+| DevOps CLI | Terraform、kubectl、Helm、Kustomize、Cosign、Syft、Trivy |
+| 通用工具 | Git、Git LFS、Docker CLI、SSH、rsync、curl、jq、tar、zip、xz |
 
-## 重要边界
+Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
+`actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态
+下实际执行所有 18 个已覆盖版本的 setup Action，而不只是检查目录是否存在。
 
-`/root/.cache/act` 是预热缓存，不是完整的 Action Mirror。Runner/Act 对缓存目录和浮动标签的处理可能随版本变化，因此：
+.NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
+`/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
+`dotnet9`、`dotnet10` 可用于明确选择主版本。
 
-1. 生产工作流应固定 Action Commit SHA。
-2. 首次部署必须做真实断网测试。
-3. 核心 Action 最稳妥的来源仍是内部 Gitea Mirror。
-4. `setup-*` 下载的语言运行时不在 Action 缓存中，需要 Tool Cache 或语言基础镜像。
-5. Docker Action 使用的镜像层不在 Action 缓存中，需要 Harbor 和镜像预拉取。
-6. 云 API、GitHub API、SaaS 和在线漏洞库无法通过该镜像变成离线服务。
+## Action 源码缓存
 
-此外，GitHub `upload-artifact@v4`、`download-artifact@v4`、`cache@v4` 与特定 Gitea 版本的协议兼容性必须通过测试确认。必要时应在内部 Gitea 使用其兼容版本，而不是直接采用 GitHub 最新版本。
+`actions.lock` 当前固定 27 个 Action 的不可变 Commit SHA，主要包括：
 
-## 构建
+- checkout、cache、artifact、github-script；
+- setup-node、setup-python、setup-java、setup-go、setup-dotnet；
+- pnpm、uv、Gradle、Rust toolchain/cache；
+- Docker login、Buildx、build-push、metadata、QEMU、Bake；
+- Terraform、kubectl、Helm、Cosign、Trivy 和 SBOM。
 
-```bash
-docker build \
-  --build-arg RUNNER_IMAGE=gitea/runner:3.0 \
-  -t gitea-runner:3.0-offline .
+源码位于 `/root/.cache/act`。生产 Workflow 也应使用 Commit SHA，避免浮动 Tag
+在离线镜像构建后发生变化。
+
+## 离线能力边界
+
+| 类型 | 离线状态 | 说明 |
+| --- | --- | --- |
+| Shell/JavaScript Action | 可离线 | 前提是源码已在 `actions.lock` 中且 Runner 命中本地缓存 |
+| setup-node/python/go/java | 可离线 | 必须选择镜像中已有版本，并设置 `check-latest: false` |
+| setup-dotnet | 有条件 | SDK 已预装；官方 Action 自身仍可能解析版本或下载安装脚本，纯离线时优先直接使用 `dotnet6` 等命令 |
+| Docker Action | 有条件 | Action 源码可缓存，但其 `uses: docker://...` 或 Dockerfile 基础镜像也必须预拉取或放入内网 Registry |
+| SCP/rsync/SSH | 可离线到内网 | 镜像已预装 CLI，不需要额外第三方 Action；目标主机仍须网络可达 |
+| cache/artifact | 依赖服务端 | 依赖 Gitea 对应协议和服务，不是仅靠 Runner 镜像即可完全离线 |
+| 云登录、发布、通知 | 不可纯离线 | AWS、Azure、GCP、GitHub API、SaaS 和公网制品库仍需访问对应服务 |
+
+离线环境不要请求镜像未包含的新语言版本，也不要启用 `check-latest`。依赖本身
+仍要由镜像内的 npm、pip、Maven、Go 和 Cargo 缓存命中，或由内网制品库提供。
+
+## 依赖缓存
+
+镜像预热以下目录：
+
+```text
+/opt/offline-cache/npm
+/opt/offline-cache/pip-wheelhouse
+/opt/offline-cache/maven
+/opt/offline-cache/go
+/opt/offline-cache/cargo
+/opt/offline-cache/mise
 ```
 
-验证镜像：
-
-```bash
-docker run --rm \
-  --entrypoint /usr/local/bin/verify-offline-image \
-  gitea-runner:3.0-offline
-```
+种子清单位于 `dependency-seeds/`。新增项目依赖时，应更新对应清单并重新构建，
+然后以 `--network none` 验证真实安装或测试命令。
 
 ## 使用
-
-沿用官方 Runner 镜像的启动参数、配置目录和注册方式，只替换镜像：
 
 ```yaml
 services:
@@ -56,34 +88,30 @@ services:
     restart: unless-stopped
     volumes:
       - ./runner-data:/data
-      - ./act-cache:/root/.cache/act
-      - ./tool-cache:/opt/hostedtoolcache
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-挂载空的 `./act-cache` 会遮蔽镜像内预置的 `/root/.cache/act`。首次启动前应将镜像缓存复制到持久化目录，或者暂时不挂载该目录：
+不要直接把空目录挂载到 `/root/.cache/act`、`/opt/hostedtoolcache` 或
+`/opt/offline-cache`，否则会遮蔽镜像内预置内容。如果必须持久化，应先从镜像
+复制种子数据，再进行挂载。
+
+## 构建和验证
+
+构建期允许联网下载并固化所有工具、Action 和依赖；成品验证阶段关闭网络：
 
 ```bash
-docker create --name runner-cache-seed ghcr.io/le-shi/gitea-runner:3.0-offline
-docker cp runner-cache-seed:/root/.cache/act ./act-cache
-docker rm runner-cache-seed
+docker build --secret id=GITHUB_TOKEN,env=GITHUB_TOKEN \
+  --build-arg RUNNER_IMAGE=gitea/runner:3.0 \
+  -t gitea-runner:3.0-offline .
+
+docker run --rm --network none \
+  --entrypoint /usr/local/bin/verify-offline-image \
+  gitea-runner:3.0-offline
+
+docker run --rm --network none \
+  --entrypoint /usr/local/bin/verify-offline-setup-actions \
+  gitea-runner:3.0-offline
 ```
 
-## 更新 Action
-
-`actions.lock` 同时记录缓存名称、仓库、Commit SHA 和人工审核的 Tag。每月工作流只负责解析新 SHA 并创建 Pull Request，不会自动合并：
-
-```powershell
-./scripts/update-actions.ps1
-```
-
-合并前必须检查上游 Release Notes、许可证、Node Runtime、外部下载地址、Gitea 兼容性以及 AMD64/ARM64 二进制支持。
-
-## 发布流程
-
-- Pull Request：检查锁文件，构建并测试 AMD64 镜像，不推送。
-- `main`：测试通过后发布 AMD64/ARM64 镜像到 GHCR。
-- Git Tag：额外发布对应版本标签。
-- 每月：创建 Action SHA 更新 Pull Request。
-
-如果 `gitea/runner:3.0` 不提供 ARM64 manifest，多架构发布会在 GitHub Actions 中明确失败。此时不能通过 QEMU 把 AMD64 基础镜像伪装成 ARM64，应改用已验证的 ARM64 上游镜像或基于官方 ARM64 二进制构建。
+GitHub Workflow 还会生成 AMD64、ARM64 两份压缩 SPDX JSON SBOM Artifact，并在
+两个架构都通过后发布多架构 manifest。

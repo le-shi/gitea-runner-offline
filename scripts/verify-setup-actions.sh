@@ -17,13 +17,14 @@ run_action() {
   action_dir="$1"
   main_file="$2"
   shift 2
+  action_log="${verify_root}/action.log"
 
   : > "${verify_root}/path"
   : > "${verify_root}/env"
   : > "${verify_root}/output"
   : > "${verify_root}/state"
 
-  env \
+  if ! env \
     RUNNER_OS=Linux \
     RUNNER_ARCH="${runner_arch}" \
     RUNNER_TEMP="${verify_root}/temp" \
@@ -37,17 +38,25 @@ run_action() {
     GITHUB_STATE="${verify_root}/state" \
     CI=true \
     "$@" \
-    node "${action_dir}/${main_file}"
+    node "${action_dir}/${main_file}" > "${action_log}" 2>&1; then
+    # Do not let an outer Actions runner interpret commands emitted by the
+    # Action process that is being tested inside the container build.
+    sed 's/::/--/g' "${action_log}" >&2
+    return 1
+  fi
 }
 
 for major in 18 20 22 24; do
   run_action /root/.cache/act/actions-setup-node@v4 dist/setup/index.js \
-    "INPUT_NODE-VERSION=${major}" "INPUT_CHECK-LATEST=false" "INPUT_CACHE="
+    "INPUT_NODE-VERSION=${major}" "INPUT_CHECK-LATEST=false" \
+    "INPUT_ALWAYS-AUTH=false" "INPUT_MIRROR-ALWAYS-AUTH=false" "INPUT_CACHE="
 done
 
 for minor in 3.10 3.11 3.12 3.13 3.14; do
   run_action /root/.cache/act/actions-setup-python@v5 dist/setup/index.js \
-    "INPUT_PYTHON-VERSION=${minor}" "INPUT_CHECK-LATEST=false" "INPUT_UPDATE-ENVIRONMENT=false"
+    "INPUT_PYTHON-VERSION=${minor}" "INPUT_CHECK-LATEST=false" \
+    "INPUT_ALLOW-PRERELEASES=false" "INPUT_FREETHREADED=false" \
+    "INPUT_UPDATE-ENVIRONMENT=false"
 done
 
 for minor in 1.22 1.23 1.24 1.25; do
