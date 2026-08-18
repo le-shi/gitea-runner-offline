@@ -210,4 +210,3 @@ jobs:
           mise exec go@1.22.12 -- go version
           mise exec java@temurin-17.0.20+8 -- java -version
           mise exec terraform@1.15.8 -- terraform version
-

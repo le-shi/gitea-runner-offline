@@ -10,7 +10,6 @@ services:
     restart: "no"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
   runner:
     image: ghcr.io/le-shi/gitea-runner:3.0-offline
     restart: unless-stopped
@@ -29,4 +28,3 @@ services:
       - ./runner-data:/data
       # Runner 创建 Job Container、运行 Docker 构建所需。
       - /var/run/docker.sock:/var/run/docker.sock
-
