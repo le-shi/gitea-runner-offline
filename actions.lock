@@ -1,4 +1,4 @@
-# cache-name|repository|commit-sha|friendly-ref
+# cache-name|build-source-repository|commit-sha|friendly-ref|optional-runtime-cache-key
 #
 # Commit SHAs are intentionally immutable. update-actions.ps1 resolves a reviewed
 # tag to its current SHA and rewrites this file before a pull request is merged.
@@ -33,12 +33,12 @@ anchore-sbom-action@v0|https://github.com/anchore/sbom-action.git|f8bdd1d8ac5e90
 
 # Exact repositories exposed by https://ailab-git.zbxsoft.com/mirror.
 # Keep v3 artifact Actions because the local xwkVue skill templates use them.
-mirror-actions_cache@v4|https://ailab-git.zbxsoft.com/mirror/actions_cache.git|0057852bfaa89a56745cba8c7296529d2fc39830|v4.3.0
-mirror-actions_checkout@v4|https://ailab-git.zbxsoft.com/mirror/actions_checkout.git|34e114876b0b11c390a56381ad16ebd13914f8d5|v4.3.1
-mirror-actions_download-artifact@v3|https://ailab-git.zbxsoft.com/mirror/actions_download-artifact.git|9bc31d5ccc31df68ecc42ccf4149144866c47d8a|v3.0.2
-mirror-actions_download-artifact@v4|https://ailab-git.zbxsoft.com/mirror/actions_download-artifact.git|d3f86a106a0bac45b974a628896c90dbdf5c8093|v4.3.0
-mirror-actions_setup-node@main|https://ailab-git.zbxsoft.com/mirror/actions_setup-node.git|53b83947a5a98c8d113130e565377fae1a50d02f|main
-mirror-actions_upload-artifact@v3|https://ailab-git.zbxsoft.com/mirror/actions_upload-artifact.git|ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5|v3.2.1
-mirror-actions_upload-artifact@v4|https://ailab-git.zbxsoft.com/mirror/actions_upload-artifact.git|ea165f8d65b6e75b540449e92b4886f43607fa02|v4.6.2
-mirror-docker_build-push-action@v6|https://ailab-git.zbxsoft.com/mirror/docker_build-push-action.git|10e90e3645eae34f1e60eeb005ba3a3d33f178e8|v6.19.2
-mirror-docker_login-action@v3|https://ailab-git.zbxsoft.com/mirror/docker_login-action.git|c94ce9fb468520275223c153574b00df6fe4bcc9|v3.7.0
+mirror-actions_cache@v4|https://github.com/actions/cache.git|0057852bfaa89a56745cba8c7296529d2fc39830|v4.3.0|mirror-actions_cache
+mirror-actions_checkout@v4|https://github.com/actions/checkout.git|34e114876b0b11c390a56381ad16ebd13914f8d5|v4.3.1|mirror-actions_checkout
+mirror-actions_download-artifact@v3|https://github.com/actions/download-artifact.git|9bc31d5ccc31df68ecc42ccf4149144866c47d8a|v3.0.2|mirror-actions_download-artifact
+mirror-actions_download-artifact@v4|https://github.com/actions/download-artifact.git|d3f86a106a0bac45b974a628896c90dbdf5c8093|v4.3.0|mirror-actions_download-artifact
+mirror-actions_setup-node@main|https://github.com/actions/setup-node.git|53b83947a5a98c8d113130e565377fae1a50d02f|v6.3.0|mirror-actions_setup-node
+mirror-actions_upload-artifact@v3|https://github.com/actions/upload-artifact.git|ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5|v3.2.1|mirror-actions_upload-artifact
+mirror-actions_upload-artifact@v4|https://github.com/actions/upload-artifact.git|ea165f8d65b6e75b540449e92b4886f43607fa02|v4.6.2|mirror-actions_upload-artifact
+mirror-docker_build-push-action@v6|https://github.com/docker/build-push-action.git|10e90e3645eae34f1e60eeb005ba3a3d33f178e8|v6.19.2|mirror-docker_build-push-action
+mirror-docker_login-action@v3|https://github.com/docker/login-action.git|c94ce9fb468520275223c153574b00df6fe4bcc9|v3.7.0|mirror-docker_login-action

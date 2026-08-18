@@ -26,7 +26,7 @@ jobs:
           set -euo pipefail
           awk -F'|' '
             /^[[:space:]]*(#|$)/ { next }
-            NF != 4 { print "invalid field count at line " NR; exit 1 }
+            NF != 4 && NF != 5 { print "invalid field count at line " NR; exit 1 }
             $3 !~ /^[0-9a-f]{40}$/ { print "invalid SHA at line " NR; exit 1 }
           ' actions.lock
           awk -F'|' '
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          while IFS='|' read -r cache_name repository commit friendly_ref; do
+          while IFS='|' read -r cache_name repository commit friendly_ref runtime_cache_key; do
             case "$cache_name" in ''|'#'*) continue ;; esac
             git ls-remote --exit-code "$repository" "$commit" >/dev/null || {
               rm -rf /tmp/action-check

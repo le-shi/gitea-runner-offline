@@ -11,7 +11,7 @@ foreach ($line in Get-Content -LiteralPath $LockFile) {
         continue
     }
 
-    $cacheName, $repository, $oldCommit, $friendlyRef = $line -split '\|', 4
+    $cacheName, $repository, $oldCommit, $friendlyRef, $runtimeCacheKey = $line -split '\|', 5
     $resolved = git ls-remote $repository "refs/tags/$friendlyRef" "refs/tags/$friendlyRef^{}" "refs/heads/$friendlyRef"
     if ($LASTEXITCODE -ne 0 -or -not $resolved) {
         throw "Unable to resolve $repository@$friendlyRef"
@@ -24,7 +24,11 @@ foreach ($line in Get-Content -LiteralPath $LockFile) {
         throw "Invalid resolved commit for $repository@$friendlyRef"
     }
 
-    $updated.Add("$cacheName|$repository|$commit|$friendlyRef")
+    $fields = @($cacheName, $repository, $commit, $friendlyRef)
+    if ($runtimeCacheKey) {
+        $fields += $runtimeCacheKey
+    }
+    $updated.Add($fields -join '|')
 }
 
 $content = ($updated -join "`n") + "`n"

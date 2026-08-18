@@ -21,12 +21,12 @@ if [ "${expected_count}" != "${actual_count}" ]; then
   exit 1
 fi
 
-while IFS='|' read -r cache_name repository commit friendly_ref; do
+while IFS='|' read -r cache_name repository commit friendly_ref runtime_cache_key; do
   case "${cache_name}" in ''|'#'*) continue ;; esac
   repository_path="${repository%.git}"
   repository_path="${repository_path#*://}"
   repository_path="${repository_path#*/}"
-  cache_key="$(printf '%s' "${repository_path}" | sed 's|[^A-Za-z0-9_.-]|-|g')"
+  cache_key="${runtime_cache_key:-$(printf '%s' "${repository_path}" | sed 's|[^A-Za-z0-9_.-]|-|g')}"
   bare_repository="${cache_root}/${cache_key}.git"
   requested_ref="${cache_name##*@}"
   test -d "${bare_repository}"

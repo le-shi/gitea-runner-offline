@@ -18,6 +18,8 @@ Runner 上构建，并用 `docker run --network none` 做断网验证。
 checkout/cache/setup-node、Docker Actions，以及本地 CI 技能仍引用的
 upload/download-artifact v3 均以固定 Commit SHA 落盘。每项同时保存可检查的
 工作树和 act 离线模式可直接打开的 bare Git 仓库。
+GitHub Hosted Runner 无法解析公司内网域名，因此构建阶段从字节一致的 GitHub
+上游 Commit 获取源码，再按内部 `mirror/<repo>` 对应的缓存键写入成品镜像。
 
 ## 预装工具链
 
