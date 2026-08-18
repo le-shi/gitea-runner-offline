@@ -22,9 +22,23 @@ mise exec python@3.12 -- python -m venv /opt/venvs/python-tools
 
 # Populate Maven's local repository with common build/test dependencies.
 export MAVEN_OPTS="-Dmaven.repo.local=${cache_root}/maven"
+download_maven_artifact() {
+  artifact="$1"
+  attempt=1
+  while ! mise exec maven@3.9 -- mvn --batch-mode --no-transfer-progress \
+    -Dmaven.wagon.http.retryHandler.count=5 \
+    org.apache.maven.plugins:maven-dependency-plugin:3.7.0:get -Dartifact="${artifact}"; do
+    if [ "${attempt}" -ge 5 ]; then
+      echo "Maven artifact download failed after ${attempt} attempts: ${artifact}" >&2
+      return 1
+    fi
+    sleep "$((attempt * 10))"
+    attempt="$((attempt + 1))"
+  done
+}
 while IFS= read -r artifact; do
   case "${artifact}" in ''|'#'*) continue ;; esac
-  mise exec maven@3.9 -- mvn --batch-mode --no-transfer-progress dependency:get -Dartifact="${artifact}"
+  download_maven_artifact "${artifact}"
 done < "${seed_root}/maven-artifacts.txt"
 
 # Compile common Go and Rust developer tools once while the image has network.
@@ -39,4 +53,3 @@ while IFS= read -r crate; do
   case "${crate}" in ''|'#'*) continue ;; esac
   mise exec rust@stable -- cargo install --locked "${crate}"
 done < "${seed_root}/rust-tools.txt"
-

@@ -18,7 +18,8 @@ test -n "$(find "${work_root}/pip" -name 'requests-*.whl' -print -quit)"
 # Maven performs a genuine offline resolution against the bundled repository.
 mvn --offline --batch-mode --no-transfer-progress \
   -Dmaven.repo.local=/opt/offline-cache/maven \
-  dependency:get -Dartifact=com.google.guava:guava:33.4.8-jre
+  org.apache.maven.plugins:maven-dependency-plugin:3.7.0:get \
+  -Dartifact=com.google.guava:guava:33.4.8-jre
 
 # Go and Cargo caches must contain source/module data as well as installed CLIs.
 test -n "$(find /opt/offline-cache/go/pkg/mod/cache/download -name '*.zip' -print -quit)"
