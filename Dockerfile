@@ -89,7 +89,8 @@ RUN chmod 0755 /usr/local/bin/install-offline-docker-tools; \
 COPY offline-images.lock /opt/gitea-runner-offline/offline-images.lock
 COPY scripts/install-offline-images.sh /usr/local/bin/install-offline-images
 COPY scripts/load-offline-images.sh /usr/local/bin/load-offline-images
-RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline-images; \
+COPY scripts/verify-offline-docker-images.sh /usr/local/bin/verify-offline-docker-images
+RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline-images /usr/local/bin/verify-offline-docker-images; \
     /usr/local/bin/install-offline-images
 
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image

@@ -96,6 +96,9 @@ jobs:
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-image "$image"
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-setup-actions "$image"
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-dependency-caches "$image"
+          docker run --rm --network none --privileged \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            --entrypoint /usr/local/bin/verify-offline-docker-images "$image"
       - name: Generate compressed platform SBOM
         shell: bash
         run: |
