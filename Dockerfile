@@ -30,7 +30,7 @@ RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       bash build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq openssh-client \
-      libicu72 libssl-dev pkg-config rsync tar tini unzip xz-utils zip zlib1g-dev docker.io; \
+      libicu72 libssl-dev pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev docker.io; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates
@@ -86,11 +86,19 @@ COPY scripts/install-docker-tools.sh /usr/local/bin/install-offline-docker-tools
 RUN chmod 0755 /usr/local/bin/install-offline-docker-tools; \
     /usr/local/bin/install-offline-docker-tools "${BUILDX_VERSION}" "${COMPOSE_VERSION}"
 
+COPY offline-images.lock /opt/gitea-runner-offline/offline-images.lock
+COPY scripts/install-offline-images.sh /usr/local/bin/install-offline-images
+COPY scripts/load-offline-images.sh /usr/local/bin/load-offline-images
+RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline-images; \
+    /usr/local/bin/install-offline-images
+
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
-RUN --network=none chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions; \
+COPY scripts/verify-dependency-caches.sh /usr/local/bin/verify-offline-dependency-caches
+RUN --network=none chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches; \
     /usr/local/bin/verify-offline-image; \
-    /usr/local/bin/verify-offline-setup-actions
+    /usr/local/bin/verify-offline-setup-actions; \
+    /usr/local/bin/verify-offline-dependency-caches
 
 ENV MISE_OFFLINE=1 \
     PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \

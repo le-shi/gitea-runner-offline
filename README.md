@@ -120,3 +120,18 @@ docker run --rm --network none \
 
 GitHub Workflow 还会生成 AMD64、ARM64 两份压缩 SPDX JSON SBOM Artifact，并在
 两个架构都通过后发布多架构 manifest。
+
+## 内置 Docker 镜像
+
+镜像在 `/opt/offline-images` 中携带当前架构的 BuildKit、binfmt/QEMU、PostgreSQL、
+Redis 和 MySQL Docker archive。挂载宿主机 Docker socket 后执行一次导入：
+
+```bash
+docker run --rm --network none \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --entrypoint load-offline-images \
+  ghcr.io/le-shi/gitea-runner:3.0-offline
+```
+
+导入脚本会先校验 `SHA256SUMS`。构建阶段解析出的各架构 Registry digest 记录在
+`/opt/offline-images/images.resolved.txt`，便于审计实际固化的镜像版本。

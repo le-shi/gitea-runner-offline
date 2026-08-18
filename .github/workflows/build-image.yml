@@ -29,6 +29,10 @@ jobs:
             NF != 4 { print "invalid field count at line " NR; exit 1 }
             $3 !~ /^[0-9a-f]{40}$/ { print "invalid SHA at line " NR; exit 1 }
           ' actions.lock
+          awk -F'|' '
+            /^[[:space:]]*(#|$)/ { next }
+            NF != 3 { print "invalid offline image field count at line " NR; exit 1 }
+          ' offline-images.lock
       - name: Check pinned commits exist
         shell: bash
         run: |
@@ -91,6 +95,7 @@ jobs:
           fi
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-image "$image"
           docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-setup-actions "$image"
+          docker run --rm --network none --entrypoint /usr/local/bin/verify-offline-dependency-caches "$image"
       - name: Generate compressed platform SBOM
         shell: bash
         run: |

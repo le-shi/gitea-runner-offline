@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq ssh rsync tar unzip zip xz docker mise node npm python java go dotnet rustc cargo mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt"
+required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker mise node npm python java go dotnet rustc cargo mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -31,6 +31,12 @@ test -d /opt/offline-cache/pip-wheelhouse
 test -d /opt/offline-cache/maven
 test -d /opt/offline-cache/go/pkg/mod
 test -d /opt/offline-cache/cargo/registry
+test -s /opt/offline-images/images.resolved.txt
+test -s /opt/offline-images/SHA256SUMS
+(cd /opt/offline-images && sha256sum --check SHA256SUMS)
+offline_image_count="$(find /opt/offline-images -maxdepth 1 -name '*.tar' | wc -l | tr -d ' ')"
+expected_image_count="$(grep -Ev '^[[:space:]]*(#|$)' /opt/gitea-runner-offline/offline-images.lock | wc -l | tr -d ' ')"
+test "${offline_image_count}" -eq "${expected_image_count}"
 
 for cache_name in node Python go Java_Temurin-Hotspot_jdk; do
   test -d "/opt/hostedtoolcache/${cache_name}"
@@ -77,3 +83,4 @@ echo "Multi-version toolchains and dependency caches verified."
 docker buildx version
 docker compose version
 docker-compose version
+echo "Verified ${offline_image_count} architecture-native offline Docker image archives."
