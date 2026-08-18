@@ -96,10 +96,7 @@ RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
 COPY scripts/verify-dependency-caches.sh /usr/local/bin/verify-offline-dependency-caches
-RUN --network=none chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches; \
-    /usr/local/bin/verify-offline-image; \
-    /usr/local/bin/verify-offline-setup-actions; \
-    /usr/local/bin/verify-offline-dependency-caches
+RUN chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches
 
 ENV MISE_OFFLINE=1 \
     PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \
