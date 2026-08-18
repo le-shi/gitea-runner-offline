@@ -23,7 +23,7 @@ Runner 上构建，并用 `docker run --network none` 做断网验证。
 | Go | 1.22、1.23、1.24、1.25 |
 | .NET SDK | 6、8、9、10 |
 | Rust | stable |
-| Ruby | 3.2、3.3、3.4、3.5 |
+| Ruby | 3.2、3.3、3.4 |
 | PHP | 8.1、8.2、8.3、8.4、8.5 |
 | PHP dependency manager | Composer 2 |
 | 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |

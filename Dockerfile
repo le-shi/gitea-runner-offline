@@ -37,7 +37,7 @@ RUN set -eux; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
       libtool openssh-client pkg-config re2c rsync skopeo tar tini unzip xz-utils zip docker.io \
-      libargon2-dev libbz2-dev libcurl4-openssl-dev libdb-dev libffi-dev libfreetype6-dev libgdbm-dev libgmp-dev \
+      libargon2-dev libbz2-dev libcurl4-openssl-dev libdb-dev libffi-dev libfreetype6-dev libgd-dev libgdbm-dev libgmp-dev \
       libicu-dev libjpeg-dev libldap2-dev libncurses-dev libonig-dev libpng-dev libreadline-dev \
       libsodium-dev libsqlite3-dev libssl-dev libwebp-dev libxml2-dev libxslt1-dev libyaml-dev libzip-dev zlib1g-dev; \
     rm -rf /var/lib/apt/lists/*; \

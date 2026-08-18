@@ -80,7 +80,7 @@ for major in 6 8 9 10; do
   esac
 done
 verify_toolchain rust@stable rustc --version
-for minor in 3.2 3.3 3.4 3.5; do
+for minor in 3.2 3.3 3.4; do
   verify_toolchain "ruby@${minor}" ruby --version
 done
 for minor in 8.1 8.2 8.3 8.4 8.5; do
