@@ -27,7 +27,7 @@ curl --fail --location --retry 5 --retry-all-errors \
   "${buildx_base}/${buildx_name}" --output "${download_dir}/${buildx_name}"
 curl --fail --location --retry 5 --retry-all-errors \
   "${buildx_base}/checksums.txt" --output "${download_dir}/buildx-checksums.txt"
-(cd "${download_dir}" && grep " ${buildx_name}$" buildx-checksums.txt | sha256sum --check)
+(cd "${download_dir}" && grep "${buildx_name}$" buildx-checksums.txt | sha256sum --check)
 install -m 0755 "${download_dir}/${buildx_name}" "${plugin_dir}/docker-buildx"
 
 compose_name="docker-compose-linux-${compose_arch}"
