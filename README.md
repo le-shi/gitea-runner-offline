@@ -29,7 +29,7 @@ Runner 上构建，并用 `docker run --network none` 做断网验证。
 
 Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态
-下实际执行所有 18 个已覆盖版本的 setup Action，而不只是检查目录是否存在。
+下实际执行所有 22 个已覆盖版本的 setup Action，而不只是检查目录是否存在。
 
 .NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
 `/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
@@ -54,7 +54,7 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 | --- | --- | --- |
 | Shell/JavaScript Action | 可离线 | 前提是源码已在 `actions.lock` 中且 Runner 命中本地缓存 |
 | setup-node/python/go/java | 可离线 | 必须选择镜像中已有版本，并设置 `check-latest: false` |
-| setup-dotnet | 有条件 | SDK 已预装；官方 Action 自身仍可能解析版本或下载安装脚本，纯离线时优先直接使用 `dotnet6` 等命令 |
+| setup-dotnet | 可离线使用固定版本 | 必须填写镜像中已安装的完整 SDK 版本；主版本、通配符或 `check-latest` 会触发版本元数据访问 |
 | Docker Action | 有条件 | Action 源码可缓存，但其 `uses: docker://...` 或 Dockerfile 基础镜像也必须预拉取或放入内网 Registry |
 | SCP/rsync/SSH | 可离线到内网 | 镜像已预装 CLI，不需要额外第三方 Action；目标主机仍须网络可达 |
 | cache/artifact | 依赖服务端 | 依赖 Gitea 对应协议和服务，不是仅靠 Runner 镜像即可完全离线 |

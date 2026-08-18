@@ -71,4 +71,9 @@ for major in 8 11 17 21 25; do
     "INPUT_OVERWRITE-SETTINGS=false"
 done
 
-echo "Official setup Actions resolved all 18 cached runtimes with networking disabled."
+for version in 6.0.428 8.0.424 9.0.317 10.0.400; do
+  run_action /root/.cache/act/actions-setup-dotnet@v4 dist/setup/index.js \
+    "INPUT_DOTNET-VERSION=${version}" "INPUT_CACHE=false"
+done
+
+echo "Official setup Actions resolved all 22 cached runtimes with networking disabled."
