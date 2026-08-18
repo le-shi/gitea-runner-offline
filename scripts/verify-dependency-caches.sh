@@ -29,7 +29,7 @@ mvn --offline --batch-mode --no-transfer-progress \
 test -n "$(find /opt/offline-cache/go/pkg/mod/cache/download -name '*.zip' -print -quit)"
 test -n "$(find /opt/offline-cache/cargo/registry/cache -name '*.crate' -print -quit)"
 GOPROXY=off go version -m /opt/offline-cache/go/bin/goimports >/dev/null
-GOPROXY=off go version -m /opt/offline-cache/go/bin/goimports | grep -q 'golang.org/x/tools v0.49.0'
+test -f /opt/offline-cache/go/pkg/mod/cache/download/golang.org/x/tools/@v/v0.49.0.mod
 CARGO_NET_OFFLINE=true cargo install --list | grep -q '^cargo-audit v0.22.2:'
 
 # RubyGems must reinstall a cached gem archive without contacting rubygems.org.

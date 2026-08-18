@@ -19,6 +19,12 @@ ENV MISE_DATA_DIR=/opt/mise \
     MISE_CONFIG_FILE=/opt/gitea-runner-offline/mise.toml \
     RUNNER_TOOL_CACHE=/opt/hostedtoolcache \
     AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache \
+    RUN_TOOL_CACHE=/opt/hostedtoolcache \
+    ACT_TOOLSDIRECTORY=/opt/acttoolcache \
+    RUNNER_TEMP=/opt/runner-temp \
+    ImageOS=debian12 \
+    IMAGE_OS=debian12 \
+    LSB_RELEASE=12 \
     NPM_CONFIG_CACHE=/opt/offline-cache/npm \
     MAVEN_OPTS=-Dmaven.repo.local=/opt/offline-cache/maven \
     GOPATH=/opt/offline-cache/go \
@@ -32,9 +38,9 @@ ENV MISE_DATA_DIR=/opt/mise \
 RUN set -eux; \
     apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      autoconf bash bison build-essential ca-certificates coreutils curl file findutils git git-lfs gzip jq \
+      autoconf bash bison build-essential ca-certificates coreutils curl dirmngr file findutils gawk git git-lfs gnupg gzip jq \
       libdb-dev libffi-dev libgdbm-dev libgmp-dev libicu72 libncurses-dev libreadline-dev libssl-dev libyaml-dev \
-      openssh-client pkg-config rsync skopeo tar tini unzip xz-utils zip zlib1g-dev; \
+      lsb-release openssh-client pipx pkg-config rsync skopeo sudo tar tini unzip wget xz-utils zip zlib1g-dev zstd; \
     rm -rf /var/lib/apt/lists/*; \
     git lfs install --system; \
     update-ca-certificates
@@ -56,16 +62,18 @@ COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
 COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
 COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
+COPY scripts/configure-job-compatibility.sh /usr/local/bin/configure-job-compatibility
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/configure-job-compatibility; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains; \
     /usr/local/bin/install-offline-dotnet; \
-    /usr/local/bin/populate-offline-toolcache
+    /usr/local/bin/populate-offline-toolcache; \
+    /usr/local/bin/configure-job-compatibility
 
 # Keep toolchain installation in a separate cacheable layer; dependency seeds
 # change more frequently and should not force every language runtime to download.

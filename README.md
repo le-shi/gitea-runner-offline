@@ -40,6 +40,11 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态
 下实际执行 15 个 setup Action 主版本的 66 次运行时选择，而不只是检查目录是否存在。
 
+为兼容更多按 GitHub Hosted Runner 环境编写的 Action，镜像还提供
+`/opt/acttoolcache` 中的 Node 20/24 Action runtime、可写的 `/github/home`、
+`/github/workflow`、`/github/file_commands` 和 `/opt/runner-temp`，并预装
+`sudo`、`wget`、`gawk`、`zstd`、`gnupg`、`pipx`、`yq` 等常见命令。
+
 .NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
 `/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
 `dotnet9`、`dotnet10` 可用于明确选择主版本。

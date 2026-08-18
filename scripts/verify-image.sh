@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq ssh rsync skopeo tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
+required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -41,6 +41,22 @@ echo "Offline runner image verified: ${actual_count} Actions and required tools 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json
 test -s /opt/gitea-runner-offline/toolcache.links.txt
 test -s /opt/gitea-runner-offline/offline-action-patches.txt
+test "${ACT_TOOLSDIRECTORY}" = /opt/acttoolcache
+test "${RUNNER_TEMP}" = /opt/runner-temp
+test "${ImageOS}" = debian12
+for directory in /github/home /github/workflow /github/file_commands /opt/runner-temp; do
+  test -d "${directory}"
+  test -w "${directory}"
+done
+case "$(uname -m)" in
+  x86_64) act_cache_arch=x64 ;;
+  aarch64) act_cache_arch=arm64 ;;
+  *) echo "Unsupported verification architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+for version in 20.20.2 24.19.0; do
+  test -L "/opt/acttoolcache/node/${version}/${act_cache_arch}"
+done
+git config --system --get-all safe.directory | grep -qxF '*'
 test -d /opt/offline-cache/npm
 test -s /opt/offline-cache/npm-packages/SHA256SUMS
 test -d /opt/offline-cache/pip-wheelhouse
