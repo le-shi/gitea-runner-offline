@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images"
+required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images show-offline-capabilities"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -41,6 +41,16 @@ echo "Offline runner image verified: ${actual_count} Actions and required tools 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json
 test -s /opt/gitea-runner-offline/toolcache.links.txt
 test -s /opt/gitea-runner-offline/offline-action-patches.txt
+capabilities=/opt/gitea-runner-offline/capabilities.json
+test -s "${capabilities}"
+jq -e '
+  .schema_version == 1 and
+  (.actions | length) == 59 and
+  (.docker.available_cli | map(.version)) == ["27.5.1", "28.5.2", "29.7.2"] and
+  .toolchains.yq == ["4.53.3"] and
+  (.offline_images | length) == 5
+' "${capabilities}" >/dev/null
+show-offline-capabilities >/dev/null
 test "${ACT_TOOLSDIRECTORY}" = /opt/acttoolcache
 test "${RUNNER_TEMP}" = /opt/runner-temp
 test "${ImageOS}" = debian12

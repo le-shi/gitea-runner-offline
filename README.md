@@ -45,6 +45,13 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `/github/workflow`、`/github/file_commands` 和 `/opt/runner-temp`，并预装
 `sudo`、`wget`、`gawk`、`zstd`、`gnupg`、`pipx`、`yq` 等常见命令。
 
+镜像能力清单保存在 `/opt/gitea-runner-offline/capabilities.json`，可直接查看：
+
+```bash
+docker run --rm --entrypoint show-offline-capabilities \
+  ghcr.io/le-shi/gitea-runner:3.0-offline
+```
+
 .NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
 `/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
 `dotnet9`、`dotnet10` 可用于明确选择主版本。

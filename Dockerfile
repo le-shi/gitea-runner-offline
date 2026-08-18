@@ -121,6 +121,12 @@ COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
 COPY scripts/verify-dependency-caches.sh /usr/local/bin/verify-offline-dependency-caches
 RUN chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches
 
+COPY scripts/generate-capabilities.py /usr/local/bin/generate-offline-capabilities
+COPY scripts/show-offline-capabilities.sh /usr/local/bin/show-offline-capabilities
+RUN chmod 0755 /usr/local/bin/generate-offline-capabilities /usr/local/bin/show-offline-capabilities; \
+    /usr/local/bin/generate-offline-capabilities; \
+    /usr/local/bin/show-offline-capabilities
+
 ENV MISE_OFFLINE=1 \
     PIP_FIND_LINKS=/opt/offline-cache/pip-wheelhouse \
     PIP_NO_INDEX=1 \
@@ -134,6 +140,7 @@ LABEL org.opencontainers.image.title="Gitea Runner Offline" \
       io.gitea.runner.offline.action-cache="/root/.cache/act" \
       io.gitea.runner.offline.dependency-cache="/opt/offline-cache" \
       io.gitea.runner.offline.toolchains="/opt/gitea-runner-offline/toolchains.resolved.json" \
+      io.gitea.runner.offline.capabilities="/opt/gitea-runner-offline/capabilities.json" \
       io.gitea.runner.offline.target-arch="${TARGETARCH}"
 
 # Keep the upstream entrypoint and command unchanged.
