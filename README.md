@@ -13,6 +13,12 @@ ghcr.io/le-shi/gitea-runner:3.0-offline
 镜像同时发布 `linux/amd64` 和 `linux/arm64`，GitHub Workflow 会在两种原生
 Runner 上构建，并用 `docker run --network none` 做断网验证。
 
+镜像同时缓存 GitHub 上游 Actions 与公司 Gitea 的
+`https://ailab-git.zbxsoft.com/mirror` 全部 7 个仓库。内部镜像使用的
+checkout/cache/setup-node、Docker Actions，以及本地 CI 技能仍引用的
+upload/download-artifact v3 均以固定 Commit SHA 落盘。每项同时保存可检查的
+工作树和 act 离线模式可直接打开的 bare Git 仓库。
+
 ## 预装工具链
 
 | 类别 | 版本 |

@@ -30,3 +30,15 @@ azure-setup-helm@v4|https://github.com/azure/setup-helm.git|1a275c3b69536ee54be4
 sigstore-cosign-installer@v3|https://github.com/sigstore/cosign-installer.git|d58896d6a1865668819e1d91763c7751a165e159|v3.9.2
 aquasecurity-trivy-action@0|https://github.com/aquasecurity/trivy-action.git|b6643a29fecd7f34b3597bc6acb0a98b03d33ff8|v0.33.1
 anchore-sbom-action@v0|https://github.com/anchore/sbom-action.git|f8bdd1d8ac5e901a77a92f111440fdb1b593736b|v0.20.6
+
+# Exact repositories exposed by https://ailab-git.zbxsoft.com/mirror.
+# Keep v3 artifact Actions because the local xwkVue skill templates use them.
+mirror-actions_cache@v4|https://ailab-git.zbxsoft.com/mirror/actions_cache.git|0057852bfaa89a56745cba8c7296529d2fc39830|v4.3.0
+mirror-actions_checkout@v4|https://ailab-git.zbxsoft.com/mirror/actions_checkout.git|34e114876b0b11c390a56381ad16ebd13914f8d5|v4.3.1
+mirror-actions_download-artifact@v3|https://ailab-git.zbxsoft.com/mirror/actions_download-artifact.git|9bc31d5ccc31df68ecc42ccf4149144866c47d8a|v3.0.2
+mirror-actions_download-artifact@v4|https://ailab-git.zbxsoft.com/mirror/actions_download-artifact.git|d3f86a106a0bac45b974a628896c90dbdf5c8093|v4.3.0
+mirror-actions_setup-node@main|https://ailab-git.zbxsoft.com/mirror/actions_setup-node.git|53b83947a5a98c8d113130e565377fae1a50d02f|main
+mirror-actions_upload-artifact@v3|https://ailab-git.zbxsoft.com/mirror/actions_upload-artifact.git|ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5|v3.2.1
+mirror-actions_upload-artifact@v4|https://ailab-git.zbxsoft.com/mirror/actions_upload-artifact.git|ea165f8d65b6e75b540449e92b4886f43607fa02|v4.6.2
+mirror-docker_build-push-action@v6|https://ailab-git.zbxsoft.com/mirror/docker_build-push-action.git|10e90e3645eae34f1e60eeb005ba3a3d33f178e8|v6.19.2
+mirror-docker_login-action@v3|https://ailab-git.zbxsoft.com/mirror/docker_login-action.git|c94ce9fb468520275223c153574b00df6fe4bcc9|v3.7.0

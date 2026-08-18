@@ -21,6 +21,19 @@ if [ "${expected_count}" != "${actual_count}" ]; then
   exit 1
 fi
 
+while IFS='|' read -r cache_name repository commit friendly_ref; do
+  case "${cache_name}" in ''|'#'*) continue ;; esac
+  repository_path="${repository%.git}"
+  repository_path="${repository_path#*://}"
+  repository_path="${repository_path#*/}"
+  cache_key="$(printf '%s' "${repository_path}" | sed 's|[^A-Za-z0-9_.-]|-|g')"
+  bare_repository="${cache_root}/${cache_key}.git"
+  requested_ref="${cache_name##*@}"
+  test -d "${bare_repository}"
+  resolved_commit="$(git --git-dir="${bare_repository}" rev-parse "refs/tags/${requested_ref}^{commit}")"
+  test "${resolved_commit}" = "${commit}"
+done <"${lock_file}"
+
 echo "Offline runner image verified: ${actual_count} Actions and required tools are present."
 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json

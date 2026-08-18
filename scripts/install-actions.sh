@@ -34,6 +34,21 @@ while IFS='|' read -r cache_name repository commit friendly_ref; do
   git -C "${destination}" checkout --quiet --detach FETCH_HEAD
   git -C "${destination}" config gc.auto 0
   printf '%s\n' "${repository}|${commit}|${friendly_ref}" >"${destination}/.offline-source"
+
+  # act's offline ActionCache opens a bare repository named from owner/repo.
+  # Keep this alongside the worktree used by direct verification scripts.
+  repository_path="${repository%.git}"
+  repository_path="${repository_path#*://}"
+  repository_path="${repository_path#*/}"
+  cache_key="$(printf '%s' "${repository_path}" | sed 's|[^A-Za-z0-9_.-]|-|g')"
+  bare_destination="${cache_root}/${cache_key}.git"
+  requested_ref="${cache_name##*@}"
+  if [ ! -d "${bare_destination}" ]; then
+    git init --quiet --bare "${bare_destination}"
+    git --git-dir="${bare_destination}" remote add origin "${repository}"
+  fi
+  retry git --git-dir="${bare_destination}" fetch --quiet --depth 1 origin "${commit}"
+  git --git-dir="${bare_destination}" update-ref "refs/tags/${requested_ref}" "${commit}"
 done <"${lock_file}"
 
 chmod -R a+rX "${cache_root}"
