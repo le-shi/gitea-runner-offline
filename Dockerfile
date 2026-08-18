@@ -119,7 +119,8 @@ RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
 COPY scripts/verify-dependency-caches.sh /usr/local/bin/verify-offline-dependency-caches
-RUN chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches
+COPY scripts/verify-job-environment.sh /usr/local/bin/verify-job-environment
+RUN chmod 0755 /usr/local/bin/verify-offline-image /usr/local/bin/verify-offline-setup-actions /usr/local/bin/verify-offline-dependency-caches /usr/local/bin/verify-job-environment
 
 COPY scripts/generate-capabilities.py /usr/local/bin/generate-offline-capabilities
 COPY scripts/show-offline-capabilities.sh /usr/local/bin/show-offline-capabilities

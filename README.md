@@ -52,6 +52,15 @@ docker run --rm --entrypoint show-offline-capabilities \
   ghcr.io/le-shi/gitea-runner:3.0-offline
 ```
 
+真实 Runner 到 Job Container 的烟雾测试 Workflow 位于
+`.gitea/workflows/offline-job-smoke.yml`。它会通过 Runner 执行缓存的 checkout 和
+五类 setup Action，并验证 Workspace、file commands、Hosted Tool Cache、
+`/opt/acttoolcache`、多语言命令以及 Docker Socket。测试 Runner 标签应配置为：
+
+```text
+offline-e2e:docker://ghcr.io/le-shi/gitea-runner:3.0-offline
+```
+
 .NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
 `/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
 `dotnet9`、`dotnet10` 可用于明确选择主版本。

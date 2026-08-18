@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images show-offline-capabilities"
+required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images show-offline-capabilities verify-job-environment"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2

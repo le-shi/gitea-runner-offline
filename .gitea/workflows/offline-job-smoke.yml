@@ -1,0 +1,63 @@
+name: Offline Runner Job Container smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - offline-smoke
+
+jobs:
+  smoke:
+    # The temporary or production runner must map this label to the offline image.
+    runs-on: offline-e2e
+    steps:
+      - name: Checkout through the Runner Action cache
+        uses: actions/checkout@v4.4.0
+
+      - name: Resolve Node from Hosted Tool Cache
+        uses: actions/setup-node@v6.5.0
+        with:
+          node-version: 24.19.0
+          check-latest: false
+          cache: ""
+
+      - name: Resolve Python from Hosted Tool Cache
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: 3.12.14
+          check-latest: false
+
+      - name: Resolve Go from Hosted Tool Cache
+        uses: actions/setup-go@v6.5.0
+        with:
+          go-version: 1.25.13
+          check-latest: false
+          cache: false
+
+      - name: Resolve Java from Hosted Tool Cache
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: temurin
+          java-version: 21.0.12
+          check-latest: false
+          cache: ""
+
+      - name: Resolve .NET from the offline wrapper
+        uses: actions/setup-dotnet@v5.4.0
+        with:
+          dotnet-version: 8.0.424
+          cache: false
+
+      - name: Verify the real Job Container environment
+        id: job-environment
+        shell: bash
+        run: /usr/local/bin/verify-job-environment
+
+      - name: Verify file-command propagation
+        shell: bash
+        env:
+          JOB_OUTPUT: ${{ steps.job-environment.outputs.offline_job_environment }}
+        run: |
+          test "${OFFLINE_JOB_ENV}" = verified
+          test "${JOB_OUTPUT}" = verified
+          echo "GITHUB_ENV and GITHUB_OUTPUT propagation verified."
