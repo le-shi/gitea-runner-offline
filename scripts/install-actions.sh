@@ -7,6 +7,15 @@ cache_root="${2:-/root/.cache/act}"
 test -f "${lock_file}"
 mkdir -p "${cache_root}"
 
+retry() {
+  attempt=1
+  while ! "$@"; do
+    if [ "${attempt}" -ge 5 ]; then return 1; fi
+    sleep "$((attempt * 5))"
+    attempt="$((attempt + 1))"
+  done
+}
+
 while IFS='|' read -r cache_name repository commit friendly_ref; do
   case "${cache_name}" in
     ''|'#'*) continue ;;
@@ -21,7 +30,7 @@ while IFS='|' read -r cache_name repository commit friendly_ref; do
   rm -rf "${destination}"
   git init --quiet "${destination}"
   git -C "${destination}" remote add origin "${repository}"
-  git -C "${destination}" fetch --quiet --depth 1 origin "${commit}"
+  retry git -C "${destination}" fetch --quiet --depth 1 origin "${commit}"
   git -C "${destination}" checkout --quiet --detach FETCH_HEAD
   git -C "${destination}" config gc.auto 0
   printf '%s\n' "${repository}|${commit}|${friendly_ref}" >"${destination}/.offline-source"

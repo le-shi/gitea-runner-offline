@@ -4,18 +4,30 @@ set -euo pipefail
 seed_root="${1:-/opt/gitea-runner-offline/dependency-seeds}"
 cache_root="${2:-/opt/offline-cache}"
 export MISE_CONFIG_FILE=/opt/gitea-runner-offline/mise.toml
+export npm_config_fetch_retries=5
+export npm_config_fetch_retry_maxtimeout=120000
+export CARGO_NET_RETRY=10
+
+retry() {
+  attempt=1
+  while ! "$@"; do
+    if [ "${attempt}" -ge 5 ]; then return 1; fi
+    sleep "$((attempt * 10))"
+    attempt="$((attempt + 1))"
+  done
+}
 
 mkdir -p "${cache_root}/npm" "${cache_root}/pip-wheelhouse" "${cache_root}/maven" \
   "${cache_root}/go" "${cache_root}/cargo"
 
 # Install popular JS tooling and retain npm's tarball cache for offline installs.
 mapfile -t node_packages < <(grep -Ev '^[[:space:]]*(#|$)' "${seed_root}/node-packages.txt")
-NPM_CONFIG_CACHE="${cache_root}/npm" mise exec node@24 -- npm install --global "${node_packages[@]}"
+retry env NPM_CONFIG_CACHE="${cache_root}/npm" mise exec node@24 -- npm install --global "${node_packages[@]}"
 
 # Use Python 3.12 for the shared automation environment and preserve wheels.
 mise exec python@3.12 -- python -m venv /opt/venvs/python-tools
-/opt/venvs/python-tools/bin/pip install --upgrade pip setuptools wheel
-/opt/venvs/python-tools/bin/pip download --dest "${cache_root}/pip-wheelhouse" \
+retry /opt/venvs/python-tools/bin/pip install --retries 10 --timeout 60 --upgrade pip setuptools wheel
+retry /opt/venvs/python-tools/bin/pip download --retries 10 --timeout 60 --dest "${cache_root}/pip-wheelhouse" \
   --requirement "${seed_root}/python-requirements.txt"
 /opt/venvs/python-tools/bin/pip install --no-index --find-links "${cache_root}/pip-wheelhouse" \
   --requirement "${seed_root}/python-requirements.txt"
@@ -45,11 +57,11 @@ done < "${seed_root}/maven-artifacts.txt"
 export GOPATH="${cache_root}/go"
 while IFS= read -r package; do
   case "${package}" in ''|'#'*) continue ;; esac
-  mise exec go@1.25 -- go install "${package}"
+  retry mise exec go@1.25 -- go install "${package}"
 done < "${seed_root}/go-tools.txt"
 
 export CARGO_HOME="${cache_root}/cargo"
 while IFS= read -r crate; do
   case "${crate}" in ''|'#'*) continue ;; esac
-  mise exec rust@stable -- cargo install --locked "${crate}"
+  retry mise exec rust@stable -- cargo install --locked "${crate}"
 done < "${seed_root}/rust-tools.txt"
