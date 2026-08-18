@@ -14,6 +14,8 @@ ENV MISE_DATA_DIR=/opt/mise \
     MISE_CACHE_DIR=/opt/offline-cache/mise \
     MISE_STATE_DIR=/opt/mise-state \
     MISE_CONFIG_FILE=/opt/gitea-runner-offline/mise.toml \
+    RUNNER_TOOL_CACHE=/opt/hostedtoolcache \
+    AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache \
     NPM_CONFIG_CACHE=/opt/offline-cache/npm \
     MAVEN_OPTS=-Dmaven.repo.local=/opt/offline-cache/maven \
     GOPATH=/opt/offline-cache/go \
@@ -48,17 +50,19 @@ COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
 COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
 COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
+COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
 COPY scripts/seed-dependencies.sh /usr/local/bin/seed-offline-dependencies
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/seed-offline-dependencies; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/seed-offline-dependencies; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains; \
-    /usr/local/bin/install-offline-dotnet
+    /usr/local/bin/install-offline-dotnet; \
+    /usr/local/bin/populate-offline-toolcache
 
 # Keep toolchain installation in a separate cacheable layer; dependency seeds
 # change more frequently and should not force every language runtime to download.

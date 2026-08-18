@@ -24,11 +24,21 @@ fi
 echo "Offline runner image verified: ${actual_count} Actions and required tools are present."
 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json
+test -s /opt/gitea-runner-offline/toolcache.links.txt
 test -d /opt/offline-cache/npm
 test -d /opt/offline-cache/pip-wheelhouse
 test -d /opt/offline-cache/maven
 test -d /opt/offline-cache/go/pkg/mod
 test -d /opt/offline-cache/cargo/registry
+
+for cache_name in node Python go Java_Temurin-Hotspot_jdk; do
+  test -d "/opt/hostedtoolcache/${cache_name}"
+done
+toolcache_count="$(find /opt/hostedtoolcache -type l | wc -l | tr -d ' ')"
+test "${toolcache_count}" -eq 18
+
+shared_dotnet_count="$(/usr/share/dotnet/dotnet --list-sdks | wc -l | tr -d ' ')"
+test "${shared_dotnet_count}" -ge 4
 
 verify_toolchain() {
   selector="$1"

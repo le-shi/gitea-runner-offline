@@ -30,6 +30,13 @@ done
 
 ln -s /opt/dotnet/10/dotnet /usr/local/bin/dotnet
 
+# setup-dotnet uses /usr/share/dotnet on Linux. Merge the independently
+# testable SDK roots there so exact pinned SDK versions are already installed.
+mkdir -p /usr/share/dotnet
+for major in 6 8 9 10; do
+  cp -a --link --no-clobber "/opt/dotnet/${major}/." /usr/share/dotnet/
+done
+
 for major in 6 8 9 10; do
   version="$("/opt/dotnet/${major}/dotnet" --version)"
   case "${version}" in
