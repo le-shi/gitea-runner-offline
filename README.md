@@ -63,6 +63,11 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 离线环境不要请求镜像未包含的新语言版本，也不要启用 `check-latest`。依赖本身
 仍要由镜像内的 npm、pip、Maven、Go 和 Cargo 缓存命中，或由内网制品库提供。
 
+缓存的 `setup-dotnet` 保留上游 `install-dotnet.sh.upstream`，并使用离线包装器
+替代执行入口。包装器只复用 `/usr/share/dotnet` 中确切存在的 SDK；请求浮动版本
+或缺失版本会立即报错，不会回退到公网下载。补丁记录位于
+`/opt/gitea-runner-offline/offline-action-patches.txt`。
+
 ## 依赖缓存
 
 镜像预热以下目录：

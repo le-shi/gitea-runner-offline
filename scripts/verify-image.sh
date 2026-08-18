@@ -25,6 +25,7 @@ echo "Offline runner image verified: ${actual_count} Actions and required tools 
 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json
 test -s /opt/gitea-runner-offline/toolcache.links.txt
+test -s /opt/gitea-runner-offline/offline-action-patches.txt
 test -d /opt/offline-cache/npm
 test -d /opt/offline-cache/pip-wheelhouse
 test -d /opt/offline-cache/maven

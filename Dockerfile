@@ -75,8 +75,10 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
 # Populate the path used by act_runner/gitea-runner in the target environment.
 # The lock file pins every repository to an immutable commit SHA.
 COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
-RUN chmod 0755 /usr/local/bin/install-offline-actions; \
-    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act
+COPY scripts/patch-offline-actions.sh /usr/local/bin/patch-offline-actions
+RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/patch-offline-actions; \
+    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act; \
+    /usr/local/bin/patch-offline-actions
 
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
