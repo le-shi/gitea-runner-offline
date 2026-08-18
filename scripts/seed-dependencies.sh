@@ -55,9 +55,14 @@ done < "${seed_root}/maven-artifacts.txt"
 
 # Compile common Go and Rust developer tools once while the image has network.
 export GOPATH="${cache_root}/go"
+export GOBIN="${GOPATH}/bin"
+mkdir -p "${GOBIN}"
 while IFS= read -r package; do
   case "${package}" in ''|'#'*) continue ;; esac
   retry mise exec go@1.25 -- go install "${package}"
+  tool_name="${package%%@*}"
+  tool_name="${tool_name##*/}"
+  test -x "${GOBIN}/${tool_name}"
 done < "${seed_root}/go-tools.txt"
 
 export CARGO_HOME="${cache_root}/cargo"
