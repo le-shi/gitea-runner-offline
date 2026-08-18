@@ -74,6 +74,10 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
     fi; \
     /usr/local/bin/seed-offline-dependencies
 
+COPY scripts/package-offline-node-modules.sh /usr/local/bin/package-offline-node-modules
+RUN chmod 0755 /usr/local/bin/package-offline-node-modules; \
+    /usr/local/bin/package-offline-node-modules
+
 # Populate the path used by act_runner/gitea-runner in the target environment.
 # The lock file pins every repository to an immutable commit SHA.
 COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions

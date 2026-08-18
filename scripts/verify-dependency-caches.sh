@@ -4,12 +4,14 @@ set -euo pipefail
 work_root="$(mktemp -d)"
 trap 'rm -rf "${work_root}"' EXIT
 
-# npm must be able to materialize a real package tarball from its cache.
+# npm must install a real package from the bundled tarball repository.
 mkdir -p "${work_root}/npm"
-global_node_modules="$(MISE_OFFLINE=1 mise exec node@24 -- npm root --global)"
-typescript_version="$(MISE_OFFLINE=1 mise exec node@24 -- node -p "require('${global_node_modules}/typescript/package.json').version")"
-(cd "${work_root}/npm" && MISE_OFFLINE=1 mise exec node@24 -- npm pack --offline "typescript@${typescript_version}" >/dev/null)
-test -n "$(find "${work_root}/npm" -name 'typescript-*.tgz' -print -quit)"
+(cd /opt/offline-cache/npm-packages && sha256sum --check SHA256SUMS)
+typescript_tarball="$(find /opt/offline-cache/npm-packages -maxdepth 1 -name 'typescript-*.tgz' -print -quit)"
+test -n "${typescript_tarball}"
+MISE_OFFLINE=1 mise exec node@24 -- npm install --offline --ignore-scripts \
+  --prefix "${work_root}/npm" "${typescript_tarball}"
+test -x "${work_root}/npm/node_modules/.bin/tsc"
 
 # pip must resolve and copy wheels without consulting an index.
 /opt/venvs/python-tools/bin/pip download --no-index \
