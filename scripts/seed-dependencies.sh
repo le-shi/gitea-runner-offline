@@ -68,7 +68,7 @@ done < "${seed_root}/go-tools.txt"
 export CARGO_HOME="${cache_root}/cargo"
 while IFS= read -r crate; do
   case "${crate}" in ''|'#'*) continue ;; esac
-  retry mise exec rust@stable -- cargo install --locked "${crate}"
+  retry mise exec rust@1.97.1 -- cargo install --locked "${crate}"
 done < "${seed_root}/rust-tools.txt"
 
 # Retain downloaded gem archives so Ruby dependencies can be reinstalled

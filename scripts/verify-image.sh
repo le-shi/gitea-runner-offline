@@ -72,16 +72,16 @@ verify_toolchain() {
   MISE_OFFLINE=1 mise exec "${selector}" -- "${executable}" "$@"
 }
 
-for selector in node@18 node@20 node@22 node@24; do
+for selector in node@18.20.8 node@20.20.2 node@22.23.2 node@24.19.0; do
   verify_toolchain "${selector}" node --version
 done
-for selector in python@3.10 python@3.11 python@3.12 python@3.13 python@3.14; do
+for selector in python@3.10.21 python@3.11.16 python@3.12.14 python@3.13.15 python@3.14.7; do
   verify_toolchain "${selector}" python --version
 done
-for selector in java@temurin-8 java@temurin-11 java@temurin-17 java@temurin-21 java@temurin-25; do
+for selector in java@temurin-8.0.502+7 java@temurin-11.0.32+9 java@temurin-17.0.20+8 java@temurin-21.0.12+8.0.LTS java@temurin-25.0.4+7.0.LTS; do
   verify_toolchain "${selector}" java -version
 done
-for selector in go@1.22 go@1.23 go@1.24 go@1.25; do
+for selector in go@1.22.12 go@1.23.12 go@1.24.13 go@1.25.13; do
   verify_toolchain "${selector}" go version
 done
 for major in 6 8 9 10; do
@@ -93,9 +93,9 @@ for major in 6 8 9 10; do
     *) echo "Expected .NET ${major}.x, got ${version}" >&2; exit 1 ;;
   esac
 done
-verify_toolchain rust@stable rustc --version
-for minor in 3.2 3.3 3.4; do
-  verify_toolchain "ruby@${minor}" ruby --version
+verify_toolchain rust@1.97.1 rustc --version
+for version in 3.2.11 3.3.12 3.4.10; do
+  verify_toolchain "ruby@${version}" ruby --version
 done
 
 echo "Multi-version toolchains and dependency caches verified."

@@ -22,23 +22,23 @@ cache_mise_tool() {
   touch "${destination}.complete"
 }
 
-for major in 18 20 22 24; do
-  version="$(mise exec "node@${major}" -- node -p 'process.versions.node')"
-  cache_mise_tool node "node@${major}" "${version}"
+for version in 18.20.8 20.20.2 22.23.2 24.19.0; do
+  resolved_version="$(mise exec "node@${version}" -- node -p 'process.versions.node')"
+  cache_mise_tool node "node@${version}" "${resolved_version}"
 done
 
-for minor in 3.10 3.11 3.12 3.13 3.14; do
-  version="$(mise exec "python@${minor}" -- python -c 'import platform; print(platform.python_version())')"
-  cache_mise_tool Python "python@${minor}" "${version}"
+for version in 3.10.21 3.11.16 3.12.14 3.13.15 3.14.7; do
+  resolved_version="$(mise exec "python@${version}" -- python -c 'import platform; print(platform.python_version())')"
+  cache_mise_tool Python "python@${version}" "${resolved_version}"
 done
 
-for minor in 1.22 1.23 1.24 1.25; do
-  version="$(mise exec "go@${minor}" -- go env GOVERSION)"
-  cache_mise_tool go "go@${minor}" "${version#go}"
+for version in 1.22.12 1.23.12 1.24.13 1.25.13; do
+  resolved_version="$(mise exec "go@${version}" -- go env GOVERSION)"
+  cache_mise_tool go "go@${version}" "${resolved_version#go}"
 done
 
-for major in 8 11 17 21 25; do
-  selector="java@temurin-${major}"
+for version in 8.0.502+7 11.0.32+9 17.0.20+8 21.0.12+8.0.LTS 25.0.4+7.0.LTS; do
+  selector="java@temurin-${version}"
   raw_version="$(mise exec "${selector}" -- java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/^[[:space:]]*java.version = / {print $2; exit}')"
   case "${raw_version}" in
     1.8.0_*) version="8.0.${raw_version#1.8.0_}" ;;

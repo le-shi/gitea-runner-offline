@@ -25,15 +25,15 @@ GitHub Hosted Runner 无法解析公司内网域名，因此构建阶段从字�
 
 | 类别 | 版本 |
 | --- | --- |
-| Node.js | 18、20、22、24 |
-| Python | 3.10、3.11、3.12、3.13、3.14 |
-| Temurin JDK | 8、11、17、21、25 |
-| Go | 1.22、1.23、1.24、1.25 |
+| Node.js | 18.20.8、20.20.2、22.23.2、24.19.0 |
+| Python | 3.10.21、3.11.16、3.12.14、3.13.15、3.14.7 |
+| Temurin JDK | 8.0.502+7、11.0.32+9、17.0.20+8、21.0.12+8.0.LTS、25.0.4+7.0.LTS |
+| Go | 1.22.12、1.23.12、1.24.13、1.25.13 |
 | .NET SDK | 6、8、9、10 |
-| Rust | stable |
-| Ruby | 3.2、3.3、3.4 |
-| 构建工具 | Maven 3.9、Gradle 8、Bun 1、Deno 2、uv |
-| DevOps CLI | Terraform、kubectl、Helm、Kustomize、Cosign、Syft、Trivy |
+| Rust | 1.97.1 |
+| Ruby | 3.2.11、3.3.12、3.4.10 |
+| 构建工具 | Maven 3.9.16、Gradle 8.14.5、Bun 1.3.14、Deno 2.9.5、uv 0.12.5 |
+| DevOps CLI | Terraform 1.15.8、kubectl 1.34.10、Helm 3.21.4、Kustomize 5.8.1、Cosign 2.6.5、Syft 1.51.0、Trivy 0.74.0 |
 | 通用工具 | Git、Git LFS、Docker CLI 27.5.1/28.5.2/29.7.2、Buildx 0.36、Compose 5.5、SSH、rsync、curl、jq、tar、zip、xz |
 
 Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
