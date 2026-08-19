@@ -94,8 +94,22 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains \
-      go@1.22.12 go@1.23.12 go@1.24.13 go@1.25.13 \
-      rust@1.97.1 ruby@3.2.11 ruby@3.3.12 ruby@3.4.10
+      go@1.22.12 go@1.23.12 go@1.24.13 go@1.25.13
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains rust@1.97.1
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains \
+      ruby@3.2.11 ruby@3.3.12 ruby@3.4.10
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
