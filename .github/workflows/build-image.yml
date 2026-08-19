@@ -148,7 +148,7 @@ jobs:
           image="${REGISTRY}/${IMAGE_NAME}:3.0-offline-${{ matrix.arch }}"
           max_bytes=$((2 * 1024 * 1024 * 1024))
           largest_layer="$(
-            docker history --no-trunc --format '{{.Size}}' "$image" |
+            docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' "$image" |
               python3 -c '
           import re
           import sys
@@ -161,13 +161,17 @@ jobs:
               "TB": 1000**4,
           }
           largest = 0
+          largest_command = ""
           for raw in sys.stdin:
-              value = raw.strip()
+              value, _, command = raw.rstrip("\n").partition("\t")
               match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)([kMGT]?B)", value)
               if not match:
                   raise SystemExit(f"Invalid Docker layer size: {value}")
               size = round(float(match.group(1)) * factors[match.group(2)])
-              largest = max(largest, size)
+              if size > largest:
+                  largest = size
+                  largest_command = command
+          print(f"Largest layer command: {largest_command}", file=sys.stderr)
           print(largest)
           '
           )"
