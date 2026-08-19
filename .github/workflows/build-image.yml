@@ -3,9 +3,10 @@ name: Build offline Gitea Runner image
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -22,6 +23,8 @@ jobs:
       runner_version: ${{ steps.versions.outputs.runner_version }}
       runner_image: ${{ steps.versions.outputs.runner_image }}
       image_version: ${{ steps.versions.outputs.image_version }}
+      release_mode: ${{ steps.versions.outputs.release_mode }}
+      platform_tag: ${{ steps.versions.outputs.platform_tag }}
     steps:
       - uses: actions/checkout@v4
       - name: Load and validate versions
@@ -33,9 +36,18 @@ jobs:
           [[ "$RUNNER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           [[ "$IMAGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           [[ "$RUNNER_VERSION" == "$IMAGE_VERSION" ]]
+          release_mode=false
+          platform_tag=latest
+          if [[ "$GITHUB_EVENT_NAME" == release ]]; then
+            [[ "$GITHUB_REF_NAME" == "v${IMAGE_VERSION}-offline" ]]
+            release_mode=true
+            platform_tag="${IMAGE_VERSION}-offline"
+          fi
           echo "runner_version=$RUNNER_VERSION" >> "$GITHUB_OUTPUT"
           echo "runner_image=gitea/runner:$RUNNER_VERSION" >> "$GITHUB_OUTPUT"
           echo "image_version=$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_mode=$release_mode" >> "$GITHUB_OUTPUT"
+          echo "platform_tag=$platform_tag" >> "$GITHUB_OUTPUT"
       - name: Validate lock file
         shell: bash
         run: |
@@ -101,7 +113,7 @@ jobs:
   build-platform:
     needs: validate
     env:
-      OFFLINE_TAG: ${{ needs.validate.outputs.image_version }}-offline
+      PLATFORM_TAG: ${{ needs.validate.outputs.platform_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -129,8 +141,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ env.OFFLINE_TAG }}-${{ matrix.arch }}
-            type=sha,prefix=${{ env.OFFLINE_TAG }}-${{ matrix.arch }}-
+            type=raw,value=${{ env.PLATFORM_TAG }}-${{ matrix.arch }}
+            type=sha,prefix=${{ env.PLATFORM_TAG }}-${{ matrix.arch }}-,enable=${{ needs.validate.outputs.release_mode == 'true' }}
       - name: Build native platform image
         uses: docker/build-push-action@v6
         with:
@@ -152,7 +164,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          image="${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}-${{ matrix.arch }}"
+          image="${REGISTRY}/${IMAGE_NAME}:${PLATFORM_TAG}-${{ matrix.arch }}"
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             docker pull "$image"
           fi
@@ -166,7 +178,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          image="${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}-${{ matrix.arch }}"
+          image="${REGISTRY}/${IMAGE_NAME}:${PLATFORM_TAG}-${{ matrix.arch }}"
           max_bytes=$((2 * 1024 * 1024 * 1024))
           largest_layer="$(
             docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' "$image" |
@@ -202,13 +214,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          image="${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}-${{ matrix.arch }}"
+          image="${REGISTRY}/${IMAGE_NAME}:${PLATFORM_TAG}-${{ matrix.arch }}"
           mkdir -p sbom
           docker run --rm --network none \
             --env SYFT_CHECK_FOR_APP_UPDATE=false \
             --entrypoint syft \
             "$image" dir:/ --output spdx-json \
-            | gzip -9 > "sbom/gitea-runner-${OFFLINE_TAG}-${{ matrix.arch }}.spdx.json.gz"
+            | gzip -9 > "sbom/gitea-runner-${PLATFORM_TAG}-${{ matrix.arch }}.spdx.json.gz"
       - name: Upload platform SBOM
         uses: actions/upload-artifact@v4
         with:
@@ -222,7 +234,8 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     env:
-      OFFLINE_TAG: ${{ needs.validate.outputs.image_version }}-offline
+      RELEASE_TAG: ${{ needs.validate.outputs.image_version }}-offline
+      PLATFORM_TAG: ${{ needs.validate.outputs.platform_tag }}
     steps:
       - uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
@@ -237,20 +250,20 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ env.OFFLINE_TAG }}
-            type=sha,prefix=${{ env.OFFLINE_TAG }}-
-            type=ref,event=tag
+            type=raw,value=latest
+            type=raw,value=${{ env.RELEASE_TAG }},enable=${{ needs.validate.outputs.release_mode == 'true' }}
+            type=sha,prefix=${{ env.RELEASE_TAG }}-,enable=${{ needs.validate.outputs.release_mode == 'true' }}
       - name: Publish multi-platform manifest
         shell: bash
         run: |
           set -euo pipefail
           sources=(
-            "${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}-amd64"
-            "${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}-arm64"
+            "${REGISTRY}/${IMAGE_NAME}:${PLATFORM_TAG}-amd64"
+            "${REGISTRY}/${IMAGE_NAME}:${PLATFORM_TAG}-arm64"
           )
           while IFS= read -r tag; do
             [[ -n "$tag" ]] || continue
             docker buildx imagetools create --tag "$tag" "${sources[@]}"
           done <<< '${{ steps.meta.outputs.tags }}'
       - name: Inspect published manifest
-        run: docker buildx imagetools inspect "${REGISTRY}/${IMAGE_NAME}:${OFFLINE_TAG}"
+        run: docker buildx imagetools inspect "${REGISTRY}/${IMAGE_NAME}:latest"

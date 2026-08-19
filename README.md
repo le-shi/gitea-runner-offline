@@ -11,6 +11,10 @@ python scripts/set-runner-version.py 3.2.0
 脚本会同步更新 Dockerfile、README 和 Compose 示例；GitHub Workflow 会直接读取
 `versions.env`，无需再逐项修改标签。
 
+`main` 分支只发布滚动标签 `latest`、`latest-amd64` 和 `latest-arm64`。创建与
+`versions.env` 匹配的 `v<版本>-offline` Release/tag 时，才会额外发布不可变的
+精确版本与 short SHA 标签，例如 `3.1.0-offline` 和 `3.1.0-offline-c06dbf7`。
+
 面向无公网或网络不稳定环境的 Gitea Runner 3.1.0 增强镜像。最终运行层为
 `debian:bookworm-slim`；`gitea/runner:3.1.0` 只用于提取官方 Runner 二进制和
 启动脚本，不以 Alpine 作为最终基础镜像。
