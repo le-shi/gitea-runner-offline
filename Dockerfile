@@ -134,7 +134,28 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
-    /usr/local/bin/seed-offline-dependencies
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache node
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache python
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache maven
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache go
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache cargo
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    /usr/local/bin/seed-offline-dependencies \
+      /opt/gitea-runner-offline/dependency-seeds /opt/offline-cache ruby
 
 COPY scripts/package-offline-node-modules.sh /usr/local/bin/package-offline-node-modules
 RUN chmod 0755 /usr/local/bin/package-offline-node-modules; \
@@ -171,7 +192,12 @@ COPY scripts/install-offline-images.sh /usr/local/bin/install-offline-images
 COPY scripts/load-offline-images.sh /usr/local/bin/load-offline-images
 COPY scripts/verify-offline-docker-images.sh /usr/local/bin/verify-offline-docker-images
 RUN chmod 0755 /usr/local/bin/install-offline-images /usr/local/bin/load-offline-images /usr/local/bin/verify-offline-docker-images; \
-    /usr/local/bin/install-offline-images
+    rm -rf /opt/offline-images; \
+    /usr/local/bin/install-offline-images \
+      /opt/gitea-runner-offline/offline-images.lock /opt/offline-images buildkit
+
+RUN /usr/local/bin/install-offline-images \
+      /opt/gitea-runner-offline/offline-images.lock /opt/offline-images binfmt
 
 COPY scripts/verify-image.sh /usr/local/bin/verify-offline-image
 COPY scripts/verify-setup-actions.sh /usr/local/bin/verify-offline-setup-actions
