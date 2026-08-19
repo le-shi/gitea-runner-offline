@@ -44,18 +44,9 @@ for line in data_lines(root / "docker-cli.lock"):
         }
     )
 
-offline_images = []
-for line in data_lines(root / "offline-images.lock"):
-    name, source, local_tag = line.split("|")
-    offline_images.append({"name": name, "source": source, "local_tag": local_tag})
-
 dependency_seeds = {}
 for seed_file in sorted((root / "dependency-seeds").glob("*.txt")):
     dependency_seeds[seed_file.name] = data_lines(seed_file)
-
-dotnet = []
-for major in ("6", "8", "9", "10"):
-    dotnet.append(command_output(f"/opt/dotnet/{major}/dotnet", "--version"))
 
 capabilities = {
     "schema_version": 1,
@@ -68,7 +59,6 @@ capabilities = {
         "runner_temp": os.environ.get("RUNNER_TEMP"),
     },
     "toolchains": tomllib.loads((root / "mise.toml").read_text(encoding="utf-8"))["tools"],
-    "dotnet": dotnet,
     "docker": {
         "default": command_output("docker", "--version"),
         "available_cli": docker_cli,
@@ -77,7 +67,12 @@ capabilities = {
     },
     "actions": actions,
     "dependency_seeds": dependency_seeds,
-    "offline_images": offline_images,
+    "offline_images": [
+        {"name": name, "source": source, "local_tag": local_tag}
+        for name, source, local_tag in (
+            line.split("|") for line in data_lines(root / "offline-images.lock")
+        )
+    ],
 }
 
 (root / "capabilities.json").write_text(

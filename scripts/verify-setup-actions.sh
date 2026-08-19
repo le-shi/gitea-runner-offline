@@ -79,11 +79,4 @@ for action_major in v3 v4 v5; do
   done
 done
 
-for action_major in v3 v4 v5; do
-  for version in 6.0.428 8.0.424 9.0.317 10.0.400; do
-    run_action "/root/.cache/act/actions-setup-dotnet@${action_major}" dist/setup/index.js \
-      "INPUT_DOTNET-VERSION=${version}" "INPUT_CACHE=false"
-  done
-done
-
-echo "All 15 setup Action major versions resolved 66 cached runtime selections with networking disabled."
+echo "All 12 setup Action major versions resolved 54 cached runtime selections with networking disabled."

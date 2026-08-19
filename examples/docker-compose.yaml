@@ -1,8 +1,7 @@
 # Gitea Runner 离线部署示例。
 # 启动前复制 examples/runner.env.example 为 .env，并填写 Gitea 地址和注册令牌。
 services:
-  # 一次性把镜像内置的 BuildKit、数据库等归档加载到宿主机 Docker。
-  # 已经手工执行过 load-offline-images 时，可以删除这个服务和 depends_on。
+  # 一次性把镜像内置的 BuildKit 和 binfmt/QEMU 归档加载到宿主机 Docker。
   offline-images-init:
     image: ghcr.io/le-shi/gitea-runner:3.0-offline
     entrypoint: ["/usr/local/bin/load-offline-images"]

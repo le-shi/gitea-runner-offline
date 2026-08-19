@@ -1,6 +1,3 @@
 # archive-name|source image|local tag
 buildkit|docker.io/moby/buildkit:buildx-stable-1|moby/buildkit:buildx-stable-1
 binfmt|docker.io/tonistiigi/binfmt:qemu-v10.0.4|tonistiigi/binfmt:qemu-v10.0.4
-postgres|docker.io/library/postgres:17-bookworm|postgres:17-bookworm
-redis|docker.io/library/redis:8-bookworm|redis:8-bookworm
-mysql|docker.io/library/mysql:8.4|mysql:8.4

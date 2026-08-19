@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go dotnet rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images show-offline-capabilities verify-job-environment"
+required_commands="bash curl git git-lfs jq yq ssh rsync skopeo sudo wget gawk zstd gpg pipx tar unzip zip xz docker docker27 docker28 docker29 use-docker-version mise node npm python java go rustc cargo ruby gem rake rspec rubocop mvn gradle terraform kubectl helm kustomize cosign syft trivy shellcheck shfmt load-offline-images show-offline-capabilities verify-job-environment"
 for command_name in ${required_commands}; do
   command -v "${command_name}" >/dev/null 2>&1 || {
     echo "Missing command: ${command_name}" >&2
@@ -40,15 +40,14 @@ echo "Offline runner image verified: ${actual_count} Actions and required tools 
 
 test -s /opt/gitea-runner-offline/toolchains.resolved.json
 test -s /opt/gitea-runner-offline/toolcache.links.txt
-test -s /opt/gitea-runner-offline/offline-action-patches.txt
 capabilities=/opt/gitea-runner-offline/capabilities.json
 test -s "${capabilities}"
 jq -e '
   .schema_version == 1 and
-  (.actions | length) == 59 and
+  (.actions | length) == 56 and
   (.docker.available_cli | map(.version)) == ["27.5.1", "28.5.2", "29.7.2"] and
   .toolchains.yq == ["4.53.3"] and
-  (.offline_images | length) == 5
+  (.offline_images | length) == 2
 ' "${capabilities}" >/dev/null
 show-offline-capabilities >/dev/null
 test "${ACT_TOOLSDIRECTORY}" = /opt/acttoolcache
@@ -78,17 +77,13 @@ test -s /opt/offline-images/images.resolved.txt
 test -s /opt/offline-images/SHA256SUMS
 (cd /opt/offline-images && sha256sum --check SHA256SUMS)
 offline_image_count="$(find /opt/offline-images -maxdepth 1 -name '*.tar' | wc -l | tr -d ' ')"
-expected_image_count="$(grep -Ev '^[[:space:]]*(#|$)' /opt/gitea-runner-offline/offline-images.lock | wc -l | tr -d ' ')"
-test "${offline_image_count}" -eq "${expected_image_count}"
+test "${offline_image_count}" -eq 2
 
 for cache_name in node Python go Java_Temurin-Hotspot_jdk; do
   test -d "/opt/hostedtoolcache/${cache_name}"
 done
 toolcache_count="$(find /opt/hostedtoolcache -type l | wc -l | tr -d ' ')"
 test "${toolcache_count}" -eq 18
-
-shared_dotnet_count="$(/usr/share/dotnet/dotnet --list-sdks | wc -l | tr -d ' ')"
-test "${shared_dotnet_count}" -ge 4
 
 verify_toolchain() {
   selector="$1"
@@ -109,15 +104,6 @@ for selector in java@temurin-8.0.502+7 java@temurin-11.0.32+9 java@temurin-17.0.
 done
 for selector in go@1.22.12 go@1.23.12 go@1.24.13 go@1.25.13; do
   verify_toolchain "${selector}" go version
-done
-for major in 6 8 9 10; do
-  printf 'Verifying %-22s ' "dotnet@${major}"
-  version="$("/opt/dotnet/${major}/dotnet" --version)"
-  echo "${version}"
-  case "${version}" in
-    "${major}."*) ;;
-    *) echo "Expected .NET ${major}.x, got ${version}" >&2; exit 1 ;;
-  esac
 done
 verify_toolchain rust@1.97.1 rustc --version
 for version in 3.2.11 3.3.12 3.4.10; do
@@ -142,4 +128,4 @@ for major in 27 28 29; do
   docker compose version
 done
 docker --version | grep -q ' 29.7.2,'
-echo "Verified ${offline_image_count} architecture-native offline Docker image archives."
+echo "Verified ${offline_image_count} architecture-native BuildKit/binfmt archives."

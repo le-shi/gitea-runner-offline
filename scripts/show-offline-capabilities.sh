@@ -13,7 +13,6 @@ jq -r '
   "",
   "Toolchains:",
   (.toolchains | to_entries[] | "  \(.key): \(.value | join(", "))"),
-  "  dotnet: \(.dotnet | join(", "))",
   "",
   "Docker:",
   "  default: \(.docker.default)",

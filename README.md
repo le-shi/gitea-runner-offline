@@ -29,7 +29,6 @@ GitHub Hosted Runner 无法解析公司内网域名，因此构建阶段从字�
 | Python | 3.10.21、3.11.16、3.12.14、3.13.15、3.14.7 |
 | Temurin JDK | 8.0.502+7、11.0.32+9、17.0.20+8、21.0.12+8.0.LTS、25.0.4+7.0.LTS |
 | Go | 1.22.12、1.23.12、1.24.13、1.25.13 |
-| .NET SDK | 6、8、9、10 |
 | Rust | 1.97.1 |
 | Ruby | 3.2.11、3.3.12、3.4.10 |
 | 构建工具 | Maven 3.9.16、Gradle 8.14.5、Bun 1.3.14、Deno 2.9.5、uv 0.12.5 |
@@ -38,7 +37,7 @@ GitHub Hosted Runner 无法解析公司内网域名，因此构建阶段从字�
 
 Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 `actions/setup-*` 按 GitHub Runner tool-cache 规则查找。Workflow 会在断网状态
-下实际执行 15 个 setup Action 主版本的 66 次运行时选择，而不只是检查目录是否存在。
+下实际执行 12 个 setup Action 主版本的 54 次运行时选择，而不只是检查目录是否存在。
 
 为兼容更多按 GitHub Hosted Runner 环境编写的 Action，镜像还提供
 `/opt/acttoolcache` 中的 Node 20/24 Action runtime、可写的 `/github/home`、
@@ -54,23 +53,19 @@ docker run --rm --entrypoint show-offline-capabilities \
 
 真实 Runner 到 Job Container 的烟雾测试 Workflow 位于
 `.gitea/workflows/offline-job-smoke.yml`。它会通过 Runner 执行缓存的 checkout 和
-五类 setup Action，并验证 Workspace、file commands、Hosted Tool Cache、
+四类 setup Action，并验证 Workspace、file commands、Hosted Tool Cache、
 `/opt/acttoolcache`、多语言命令以及 Docker Socket。测试 Runner 标签应配置为：
 
 ```text
 offline-e2e:docker://ghcr.io/le-shi/gitea-runner:3.0-offline
 ```
 
-.NET SDK 分别保存在 `/opt/dotnet/6`、`/opt/dotnet/8`、`/opt/dotnet/9` 和
-`/opt/dotnet/10`，同时合并到 `/usr/share/dotnet`。`dotnet6`、`dotnet8`、
-`dotnet9`、`dotnet10` 可用于明确选择主版本。
-
 ## Action 源码缓存
 
-`actions.lock` 当前固定 59 个 Action 版本与内部 mirror 兼容条目的不可变 Commit SHA，主要包括：
+`actions.lock` 当前固定 56 个 Action 版本与内部 mirror 兼容条目的不可变 Commit SHA，主要包括：
 
 - checkout、cache、artifact、github-script；
-- setup-node、setup-python、setup-java、setup-go、setup-dotnet；
+- setup-node、setup-python、setup-java、setup-go；
 - pnpm、uv、Gradle、Rust toolchain/cache；
 - Docker login、Buildx、build-push、metadata、QEMU、Bake；
 - Terraform、kubectl、Helm、Cosign、Trivy 和 SBOM。
@@ -90,7 +85,6 @@ Docker CLI 同时安装在 `/opt/docker/27.5.1`、`/opt/docker/28.5.2` 和
 | --- | --- | --- |
 | Shell/JavaScript Action | 可离线 | 前提是源码已在 `actions.lock` 中且 Runner 命中本地缓存 |
 | setup-node/python/go/java | 可离线 | 必须选择镜像中已有版本，并设置 `check-latest: false` |
-| setup-dotnet | 可离线使用固定版本 | 必须填写镜像中已安装的完整 SDK 版本；主版本、通配符或 `check-latest` 会触发版本元数据访问 |
 | Docker Action | 有条件 | Action 源码可缓存，但其 `uses: docker://...` 或 Dockerfile 基础镜像也必须预拉取或放入内网 Registry |
 | SCP/rsync/SSH | 可离线到内网 | 镜像已预装 CLI，不需要额外第三方 Action；目标主机仍须网络可达 |
 | cache/artifact | 依赖服务端 | 依赖 Gitea 对应协议和服务，不是仅靠 Runner 镜像即可完全离线 |
@@ -98,11 +92,6 @@ Docker CLI 同时安装在 `/opt/docker/27.5.1`、`/opt/docker/28.5.2` 和
 
 离线环境不要请求镜像未包含的新语言版本，也不要启用 `check-latest`。依赖本身
 仍要由镜像内的 npm、pip、Maven、Go 和 Cargo 缓存命中，或由内网制品库提供。
-
-缓存的 `setup-dotnet` 保留上游 `install-dotnet.sh.upstream`，并使用离线包装器
-替代执行入口。包装器只复用 `/usr/share/dotnet` 中确切存在的 SDK；请求浮动版本
-或缺失版本会立即报错，不会回退到公网下载。补丁记录位于
-`/opt/gitea-runner-offline/offline-action-patches.txt`。
 
 ## 依赖缓存
 
@@ -134,7 +123,7 @@ Docker CLI 同时安装在 `/opt/docker/27.5.1`、`/opt/docker/28.5.2` 和
 ```bash
 cd examples
 cp runner.env.example .env
-# 编辑 .env 后启动；首次启动会先导入内置 Docker 镜像归档。
+# 编辑 .env 后启动；首次启动会导入内置的 BuildKit 和 binfmt/QEMU。
 docker compose up -d
 ```
 
@@ -182,12 +171,12 @@ docker run --rm --network none \
 ```
 
 GitHub Workflow 还会生成 AMD64、ARM64 两份压缩 SPDX JSON SBOM Artifact，并在
-两个架构都通过后发布多架构 manifest。
+两个架构都通过后发布多架构 manifest。发布前会检查 Registry 中的压缩层，任何
+单层超过 2 GiB 都会使构建失败。
 
-## 内置 Docker 镜像
-
-镜像在 `/opt/offline-images` 中携带当前架构的 BuildKit、binfmt/QEMU、PostgreSQL、
-Redis 和 MySQL Docker archive。挂载宿主机 Docker socket 后执行一次导入：
+Runner 镜像只携带 BuildKit 和 binfmt/QEMU 两个当前架构的 Docker archive，供
+离线 Buildx 与跨架构构建使用；不再携带 PostgreSQL、Redis 或 MySQL。挂载宿主机
+Docker socket 后可手工导入：
 
 ```bash
 docker run --rm --network none \
@@ -195,6 +184,3 @@ docker run --rm --network none \
   --entrypoint load-offline-images \
   ghcr.io/le-shi/gitea-runner:3.0-offline
 ```
-
-导入脚本会先校验 `SHA256SUMS`。构建阶段解析出的各架构 Registry digest 记录在
-`/opt/offline-images/images.resolved.txt`，便于审计实际固化的镜像版本。

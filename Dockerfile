@@ -32,7 +32,6 @@ ENV MISE_DATA_DIR=/opt/mise \
     CARGO_HOME=/opt/offline-cache/cargo \
     GEM_HOME=/opt/offline-cache/ruby/gems \
     GEM_SPEC_CACHE=/opt/offline-cache/ruby/specs \
-    DOTNET_ROOT=/opt/dotnet/10 \
     PATH=/opt/venvs/python-tools/bin:/opt/offline-cache/go/bin:/opt/offline-cache/cargo/bin:/opt/offline-cache/ruby/gems/bin:/opt/mise/shims:/opt/mise/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN set -eux; \
@@ -60,18 +59,48 @@ COPY actions.lock /opt/gitea-runner-offline/actions.lock
 COPY mise.toml /opt/gitea-runner-offline/mise.toml
 COPY dependency-seeds/ /opt/gitea-runner-offline/dependency-seeds/
 COPY scripts/install-toolchains.sh /usr/local/bin/install-offline-toolchains
-COPY scripts/install-dotnet.sh /usr/local/bin/install-offline-dotnet
 COPY scripts/populate-toolcache.sh /usr/local/bin/populate-offline-toolcache
 COPY scripts/configure-job-compatibility.sh /usr/local/bin/configure-job-compatibility
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
     set -eu; \
-    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/install-offline-dotnet /usr/local/bin/populate-offline-toolcache /usr/local/bin/configure-job-compatibility; \
+    chmod 0755 /usr/local/bin/install-offline-toolchains /usr/local/bin/populate-offline-toolcache /usr/local/bin/configure-job-compatibility; \
     if [ -s /run/secrets/GITHUB_TOKEN ]; then \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
-    /usr/local/bin/install-offline-toolchains; \
-    /usr/local/bin/install-offline-dotnet; \
+    /usr/local/bin/install-offline-toolchains \
+      node@18.20.8 node@20.20.2 node@22.23.2 node@24.19.0 \
+      python@3.10.21 python@3.11.16 python@3.12.14 python@3.13.15 python@3.14.7
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains \
+      java@temurin-8.0.502+7 java@temurin-11.0.32+9 java@temurin-17.0.20+8 \
+      java@temurin-21.0.12+8.0.LTS java@temurin-25.0.4+7.0.LTS
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains \
+      go@1.22.12 go@1.23.12 go@1.24.13 go@1.25.13 \
+      rust@1.97.1 ruby@3.2.11 ruby@3.3.12 ruby@3.4.10
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains \
+      maven@3.9.16 gradle@8.14.5 bun@1.3.14 deno@2.9.5 uv@0.12.5 \
+      terraform@1.15.8 kubectl@1.34.10 helm@3.21.4 kustomize@5.8.1 \
+      cosign@2.6.5 syft@1.51.0 trivy@0.74.0 shellcheck@0.11.0 shfmt@3.13.1 yq@4.53.3
+
+RUN set -eu; \
     /usr/local/bin/populate-offline-toolcache; \
     /usr/local/bin/configure-job-compatibility
 
@@ -93,10 +122,8 @@ RUN chmod 0755 /usr/local/bin/package-offline-node-modules; \
 # Populate the path used by act_runner/gitea-runner in the target environment.
 # The lock file pins every repository to an immutable commit SHA.
 COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
-COPY scripts/patch-offline-actions.sh /usr/local/bin/patch-offline-actions
-RUN chmod 0755 /usr/local/bin/install-offline-actions /usr/local/bin/patch-offline-actions; \
-    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act; \
-    /usr/local/bin/patch-offline-actions
+RUN chmod 0755 /usr/local/bin/install-offline-actions; \
+    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act
 
 COPY scripts/install-docker-tools.sh /usr/local/bin/install-offline-docker-tools
 COPY docker-cli.lock /opt/gitea-runner-offline/docker-cli.lock

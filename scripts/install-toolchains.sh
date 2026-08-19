@@ -10,7 +10,7 @@ export MISE_STATE_DIR="${MISE_STATE_DIR:-/opt/mise-state}"
 mkdir -p "${MISE_DATA_DIR}" "${MISE_CACHE_DIR}" "${MISE_STATE_DIR}"
 mise trust --yes "${config_file}"
 attempt=1
-while ! mise install --yes; do
+while ! mise install --yes "$@"; do
   if [ "${attempt}" -ge 5 ]; then
     echo "Toolchain installation failed after ${attempt} attempts" >&2
     exit 1

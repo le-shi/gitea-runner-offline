@@ -32,7 +32,6 @@ mise exec python@3.12.14 -- python --version
 mise exec go@1.25.13 -- go version
 mise exec java@temurin-21.0.12+8.0.LTS -- java -version
 mise exec rust@1.97.1 -- rustc --version
-dotnet8 --version
 
 if test -S /var/run/docker.sock; then
   docker29 version --format '{{.Client.Version}}'

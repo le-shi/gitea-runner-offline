@@ -115,29 +115,6 @@ jobs:
             echo "未发现 go.mod，跳过 Go 测试。"
           fi
 
-  dotnet:
-    name: .NET 8
-    runs-on: offline
-    steps:
-      - uses: actions/checkout@v4.4.0
-      - name: 选择完整 .NET SDK 版本
-        uses: actions/setup-dotnet@v5.4.0
-        with:
-          dotnet-version: 8.0.424
-          cache: false
-
-      - name: .NET 离线构建
-        shell: bash
-        run: |
-          dotnet --version
-          project="$(find . -maxdepth 2 \( -name '*.sln' -o -name '*.csproj' \) -print -quit)"
-          if [ -n "${project}" ]; then
-            dotnet restore "${project}" --ignore-failed-sources
-            dotnet test "${project}" --no-restore
-          else
-            echo "未发现 sln/csproj，跳过 .NET 构建。"
-          fi
-
   rust:
     name: Rust 1.97.1
     runs-on: offline
