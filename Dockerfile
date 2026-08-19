@@ -69,7 +69,14 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
       export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
     fi; \
     /usr/local/bin/install-offline-toolchains \
-      node@18.20.8 node@20.20.2 node@22.23.2 node@24.19.0 \
+      node@18.20.8 node@20.20.2 node@22.23.2 node@24.19.0
+
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+    set -eu; \
+    if [ -s /run/secrets/GITHUB_TOKEN ]; then \
+      export GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" GH_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)"; \
+    fi; \
+    /usr/local/bin/install-offline-toolchains \
       python@3.10.21 python@3.11.16 python@3.12.14 python@3.13.15 python@3.14.7
 
 RUN --mount=type=secret,id=GITHUB_TOKEN \
