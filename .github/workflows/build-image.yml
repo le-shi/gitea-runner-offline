@@ -148,6 +148,7 @@ jobs:
           image="${REGISTRY}/${IMAGE_NAME}:3.0-offline-${{ matrix.arch }}"
           max_bytes=$((2 * 1024 * 1024 * 1024))
           largest_layer="$(docker history --no-trunc --format '{{.Size}}' "$image" \
+            | sed 's/^0B$/0/' \
             | numfmt --from=si \
             | sort -nr \
             | head -n 1)"
