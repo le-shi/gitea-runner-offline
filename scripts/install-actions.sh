@@ -3,6 +3,8 @@ set -euo pipefail
 
 lock_file="${1:-/opt/gitea-runner-offline/actions.lock}"
 cache_root="${2:-/root/.cache/act}"
+first_action="${3:-1}"
+last_action="${4:-999999}"
 
 test -f "${lock_file}"
 mkdir -p "${cache_root}"
@@ -16,10 +18,16 @@ retry() {
   done
 }
 
+action_index=0
 while IFS='|' read -r cache_name repository commit friendly_ref runtime_cache_key; do
   case "${cache_name}" in
     ''|'#'*) continue ;;
   esac
+
+  action_index="$((action_index + 1))"
+  if [ "${action_index}" -lt "${first_action}" ] || [ "${action_index}" -gt "${last_action}" ]; then
+    continue
+  fi
 
   if ! printf '%s' "${commit}" | grep -Eq '^[0-9a-f]{40}$'; then
     echo "Invalid commit SHA for ${cache_name}: ${commit}" >&2

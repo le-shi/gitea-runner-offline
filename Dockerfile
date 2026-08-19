@@ -130,7 +130,16 @@ RUN chmod 0755 /usr/local/bin/package-offline-node-modules; \
 # The lock file pins every repository to an immutable commit SHA.
 COPY scripts/install-actions.sh /usr/local/bin/install-offline-actions
 RUN chmod 0755 /usr/local/bin/install-offline-actions; \
-    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act
+    /usr/local/bin/install-offline-actions /opt/gitea-runner-offline/actions.lock /root/.cache/act 1 14
+
+RUN /usr/local/bin/install-offline-actions \
+      /opt/gitea-runner-offline/actions.lock /root/.cache/act 15 28
+
+RUN /usr/local/bin/install-offline-actions \
+      /opt/gitea-runner-offline/actions.lock /root/.cache/act 29 42
+
+RUN /usr/local/bin/install-offline-actions \
+      /opt/gitea-runner-offline/actions.lock /root/.cache/act 43 56
 
 COPY scripts/install-docker-tools.sh /usr/local/bin/install-offline-docker-tools
 COPY docker-cli.lock /opt/gitea-runner-offline/docker-cli.lock
