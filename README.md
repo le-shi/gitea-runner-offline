@@ -1,13 +1,24 @@
 # gitea-runner-offline
 
-面向无公网或网络不稳定环境的 Gitea Runner 3.0 增强镜像。最终运行层为
-`debian:bookworm-slim`；`gitea/runner:3.0` 只用于提取官方 Runner 二进制和
+## 版本升级
+
+Runner 与镜像版本以根目录 `versions.env` 为入口。升级时执行一次：
+
+```bash
+python scripts/set-runner-version.py 3.2.0
+```
+
+脚本会同步更新 Dockerfile、README 和 Compose 示例；GitHub Workflow 会直接读取
+`versions.env`，无需再逐项修改标签。
+
+面向无公网或网络不稳定环境的 Gitea Runner 3.1.0 增强镜像。最终运行层为
+`debian:bookworm-slim`；`gitea/runner:3.1.0` 只用于提取官方 Runner 二进制和
 启动脚本，不以 Alpine 作为最终基础镜像。
 
 发布地址：
 
 ```text
-ghcr.io/le-shi/gitea-runner:3.0-offline
+ghcr.io/le-shi/gitea-runner:3.1.0-offline
 ```
 
 镜像同时发布 `linux/amd64` 和 `linux/arm64`，GitHub Workflow 会在两种原生
@@ -48,7 +59,7 @@ Node、Python、Go 和 Java 同时写入 `/opt/hostedtoolcache`，供官方
 
 ```bash
 docker run --rm --entrypoint show-offline-capabilities \
-  ghcr.io/le-shi/gitea-runner:3.0-offline
+  ghcr.io/le-shi/gitea-runner:3.1.0-offline
 ```
 
 真实 Runner 到 Job Container 的烟雾测试 Workflow 位于
@@ -57,7 +68,7 @@ docker run --rm --entrypoint show-offline-capabilities \
 `/opt/acttoolcache`、多语言命令以及 Docker Socket。测试 Runner 标签应配置为：
 
 ```text
-offline-e2e:docker://ghcr.io/le-shi/gitea-runner:3.0-offline
+offline-e2e:docker://ghcr.io/le-shi/gitea-runner:3.1.0-offline
 ```
 
 ## Action 源码缓存
@@ -141,7 +152,7 @@ NuGet、Maven、Go、Cargo 或 Gem 依赖仍需提前加入镜像，或由内网
 ```yaml
 services:
   runner:
-    image: ghcr.io/le-shi/gitea-runner:3.0-offline
+    image: ghcr.io/le-shi/gitea-runner:3.1.0-offline
     restart: unless-stopped
     volumes:
       - ./runner-data:/data
@@ -158,16 +169,17 @@ services:
 
 ```bash
 docker build --secret id=GITHUB_TOKEN,env=GITHUB_TOKEN \
-  --build-arg RUNNER_IMAGE=gitea/runner:3.0 \
-  -t gitea-runner:3.0-offline .
+  --build-arg RUNNER_IMAGE=gitea/runner:3.1.0 \
+  --build-arg RUNNER_VERSION=3.1.0 \
+  -t gitea-runner:3.1.0-offline .
 
 docker run --rm --network none \
   --entrypoint /usr/local/bin/verify-offline-image \
-  gitea-runner:3.0-offline
+  gitea-runner:3.1.0-offline
 
 docker run --rm --network none \
   --entrypoint /usr/local/bin/verify-offline-setup-actions \
-  gitea-runner:3.0-offline
+  gitea-runner:3.1.0-offline
 ```
 
 GitHub Workflow 还会生成 AMD64、ARM64 两份压缩 SPDX JSON SBOM Artifact，并在
@@ -182,5 +194,5 @@ Docker socket 后可手工导入：
 docker run --rm --network none \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --entrypoint load-offline-images \
-  ghcr.io/le-shi/gitea-runner:3.0-offline
+  ghcr.io/le-shi/gitea-runner:3.1.0-offline
 ```

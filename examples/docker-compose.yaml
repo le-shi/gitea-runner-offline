@@ -3,14 +3,14 @@
 services:
   # 一次性把镜像内置的 BuildKit 和 binfmt/QEMU 归档加载到宿主机 Docker。
   offline-images-init:
-    image: ghcr.io/le-shi/gitea-runner:3.0-offline
+    image: ghcr.io/le-shi/gitea-runner:3.1.0-offline
     entrypoint: ["/usr/local/bin/load-offline-images"]
     network_mode: none
     restart: "no"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   runner:
-    image: ghcr.io/le-shi/gitea-runner:3.0-offline
+    image: ghcr.io/le-shi/gitea-runner:3.1.0-offline
     restart: unless-stopped
     depends_on:
       offline-images-init:
@@ -21,7 +21,7 @@ services:
       GITEA_RUNNER_NAME: "${GITEA_RUNNER_NAME:-offline-runner-01}"
       # offline 使用同一个离线镜像创建隔离 Job Container。
       # offline-host 直接在 Runner 容器运行，适合 Docker 构建或排障，但隔离性较弱。
-      GITEA_RUNNER_LABELS: "offline:docker://ghcr.io/le-shi/gitea-runner:3.0-offline,offline-host:host"
+      GITEA_RUNNER_LABELS: "offline:docker://ghcr.io/le-shi/gitea-runner:3.1.0-offline,offline-host:host"
     volumes:
       # Runner 注册状态和配置持久化目录。
       - ./runner-data:/data
