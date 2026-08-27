@@ -169,6 +169,40 @@ services:
 
 ## 构建和验证
 
+### 手工导出并上传离线镜像
+
+需要将 GHCR 镜像转存到内网文件服务器时，在 GitHub 仓库的 **Actions** 页面手工
+运行 `Export offline image to file server`。工作流不会随普通提交或 Release 自动运行。
+
+运行前在仓库 `Settings -> Secrets and variables -> Actions` 中配置：
+
+| Secret | 含义 | 示例或要求 |
+| --- | --- | --- |
+| `FILE_SERVER_USER` | 文件服务器 SSH 用户 | 建议使用仅能写入镜像目录的专用用户 |
+| `FILE_SERVER_SSH_KEY` | 对应用户的 SSH 私钥 | 完整 OpenSSH 私钥，多行内容原样保存 |
+| `FILE_SERVER_KNOWN_HOSTS` | 文件服务器 SSH 主机公钥 | 使用可信网络执行 `ssh-keyscan -H <主机>` 后人工核对指纹 |
+
+手工执行时填写镜像基础标签（例如 `latest` 或 `3.1.0-offline`）、架构、文件服务器
+地址、SSH 端口和远端绝对目录。不要在输入框中填写密码、私钥或带凭据的 URL。
+选择 `both` 时 AMD64 和 ARM64 会分别导出并上传：
+
+```text
+gitea-runner-3.1.0-offline-amd64.docker.tar.zst
+gitea-runner-3.1.0-offline-amd64.docker.tar.zst.sha256
+gitea-runner-3.1.0-offline-arm64.docker.tar.zst
+gitea-runner-3.1.0-offline-arm64.docker.tar.zst.sha256
+```
+
+默认使用 `rsync --partial --append-verify`，适合网络不稳定时断点续传，但文件服务器
+也必须安装 rsync。没有 rsync 时选择 `scp`。归档采用 zstd 压缩；Docker 镜像层本身
+已压缩，因此最终缩减比例取决于镜像内容，不能保证固定比例。文件服务器校验成功后，
+在离线 Docker 主机导入：
+
+```bash
+sha256sum -c gitea-runner-3.1.0-offline-amd64.docker.tar.zst.sha256
+zstd -dc gitea-runner-3.1.0-offline-amd64.docker.tar.zst | docker load
+```
+
 构建期允许联网下载并固化所有工具、Action 和依赖；成品验证阶段关闭网络：
 
 ```bash

@@ -1,0 +1,244 @@
+name: Export offline image to file server
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "要导出的多架构镜像基础标签，例如 latest 或 3.1.0-offline"
+        required: true
+        default: latest
+        type: string
+      architecture:
+        description: "要导出的架构"
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - amd64
+          - arm64
+      file_server:
+        description: "文件服务器主机名或 IP，不要包含用户名、端口和路径"
+        required: true
+        type: string
+      file_server_port:
+        description: "文件服务器 SSH 端口"
+        required: true
+        default: "22"
+        type: string
+      remote_path:
+        description: "服务器保存目录，例如 /data/images/gitea-runner"
+        required: true
+        type: string
+      transfer_method:
+        description: "rsync 支持断点续传；scp 仅要求服务器提供 SSH/SFTP"
+        required: true
+        default: rsync
+        type: choice
+        options:
+          - rsync
+          - scp
+      compression_level:
+        description: "zstd 压缩级别，1-19；级别越高越慢，通常体积更小"
+        required: true
+        default: "19"
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: export-offline-image-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/gitea-runner
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      architectures: ${{ steps.matrix.outputs.architectures }}
+    steps:
+      - name: Validate inputs and create architecture matrix
+        id: matrix
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          FILE_SERVER_PORT: ${{ inputs.file_server_port }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+          COMPRESSION_LEVEL: ${{ inputs.compression_level }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]
+          [[ "$FILE_SERVER" =~ ^[A-Za-z0-9.-]+$ ]]
+          [[ "$FILE_SERVER_PORT" =~ ^[0-9]+$ ]]
+          (( FILE_SERVER_PORT >= 1 && FILE_SERVER_PORT <= 65535 ))
+          [[ "$REMOTE_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
+          [[ "/$REMOTE_PATH/" != */../* && "/$REMOTE_PATH/" != */./* ]]
+          [[ "$COMPRESSION_LEVEL" =~ ^[0-9]+$ ]]
+          (( COMPRESSION_LEVEL >= 1 && COMPRESSION_LEVEL <= 19 ))
+
+          case "$ARCHITECTURE" in
+            both)  echo 'architectures=["amd64","arm64"]' >> "$GITHUB_OUTPUT" ;;
+            amd64) echo 'architectures=["amd64"]' >> "$GITHUB_OUTPUT" ;;
+            arm64) echo 'architectures=["arm64"]' >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unsupported architecture: $ARCHITECTURE" >&2; exit 1 ;;
+          esac
+
+  export-and-upload:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: ${{ fromJSON(needs.prepare.outputs.architectures) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check required SSH secrets
+        shell: bash
+        env:
+          FILE_SERVER_USER: ${{ secrets.FILE_SERVER_USER }}
+          FILE_SERVER_SSH_KEY: ${{ secrets.FILE_SERVER_SSH_KEY }}
+          FILE_SERVER_KNOWN_HOSTS: ${{ secrets.FILE_SERVER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ -n "$FILE_SERVER_USER" ]] || { echo "Missing secret: FILE_SERVER_USER" >&2; exit 1; }
+          [[ -n "$FILE_SERVER_SSH_KEY" ]] || { echo "Missing secret: FILE_SERVER_SSH_KEY" >&2; exit 1; }
+          [[ -n "$FILE_SERVER_KNOWN_HOSTS" ]] || { echo "Missing secret: FILE_SERVER_KNOWN_HOSTS" >&2; exit 1; }
+          [[ "$FILE_SERVER_USER" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] || {
+            echo "FILE_SERVER_USER contains unsupported characters" >&2
+            exit 1
+          }
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull selected platform and export compressed archive
+        id: archive
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          ARCH: ${{ matrix.architecture }}
+          COMPRESSION_LEVEL: ${{ inputs.compression_level }}
+        run: |
+          set -euo pipefail
+          image="${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+          safe_tag="${IMAGE_TAG//[^A-Za-z0-9_.-]/-}"
+          archive="gitea-runner-${safe_tag}-${ARCH}.docker.tar.zst"
+
+          docker pull --platform "linux/${ARCH}" "$image"
+          actual_arch="$(docker image inspect "$image" --format '{{.Architecture}}')"
+          [[ "$actual_arch" == "$ARCH" ]]
+          docker image inspect "$image" --format '{{.Id}} {{.Architecture}} {{.Os}}'
+          docker save "$image" | zstd -T0 -"${COMPRESSION_LEVEL}" -o "$archive"
+          sha256sum "$archive" > "${archive}.sha256"
+
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "archive_size=$(stat -c '%s' "$archive")" >> "$GITHUB_OUTPUT"
+          ls -lh "$archive" "${archive}.sha256"
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          FILE_SERVER_SSH_KEY: ${{ secrets.FILE_SERVER_SSH_KEY }}
+          FILE_SERVER_KNOWN_HOSTS: ${{ secrets.FILE_SERVER_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$FILE_SERVER_SSH_KEY" > ~/.ssh/id_file_server
+          printf '%s\n' "$FILE_SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_file_server ~/.ssh/known_hosts
+
+      - name: Create remote directory
+        shell: bash
+        env:
+          FILE_SERVER_USER: ${{ secrets.FILE_SERVER_USER }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          FILE_SERVER_PORT: ${{ inputs.file_server_port }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+        run: |
+          set -euo pipefail
+          printf -v quoted_path '%q' "$REMOTE_PATH"
+          ssh -i ~/.ssh/id_file_server -p "$FILE_SERVER_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${FILE_SERVER_USER}@${FILE_SERVER}" "mkdir -p -- ${quoted_path}"
+
+      - name: Upload archive with rsync
+        if: inputs.transfer_method == 'rsync'
+        shell: bash
+        env:
+          FILE_SERVER_USER: ${{ secrets.FILE_SERVER_USER }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          FILE_SERVER_PORT: ${{ inputs.file_server_port }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          set -euo pipefail
+          rsync --archive --human-readable --info=progress2 \
+            --partial --append-verify \
+            -e "ssh -i ~/.ssh/id_file_server -p ${FILE_SERVER_PORT} -o BatchMode=yes -o StrictHostKeyChecking=yes" \
+            "$ARCHIVE" "${ARCHIVE}.sha256" \
+            "${FILE_SERVER_USER}@${FILE_SERVER}:${REMOTE_PATH%/}/"
+
+      - name: Upload archive with scp
+        if: inputs.transfer_method == 'scp'
+        shell: bash
+        env:
+          FILE_SERVER_USER: ${{ secrets.FILE_SERVER_USER }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          FILE_SERVER_PORT: ${{ inputs.file_server_port }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          set -euo pipefail
+          scp -i ~/.ssh/id_file_server -P "$FILE_SERVER_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$ARCHIVE" "${ARCHIVE}.sha256" \
+            "${FILE_SERVER_USER}@${FILE_SERVER}:${REMOTE_PATH%/}/"
+
+      - name: Verify uploaded checksum on file server
+        shell: bash
+        env:
+          FILE_SERVER_USER: ${{ secrets.FILE_SERVER_USER }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          FILE_SERVER_PORT: ${{ inputs.file_server_port }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          set -euo pipefail
+          remote_file="${REMOTE_PATH%/}/${ARCHIVE}"
+          remote_checksum="${remote_file}.sha256"
+          printf -v quoted_file '%q' "$remote_file"
+          printf -v quoted_checksum '%q' "$remote_checksum"
+          ssh -i ~/.ssh/id_file_server -p "$FILE_SERVER_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${FILE_SERVER_USER}@${FILE_SERVER}" \
+            "test -s ${quoted_file} && cd -- $(printf '%q' "${REMOTE_PATH%/}") && sha256sum -c -- $(printf '%q' "${ARCHIVE}.sha256")"
+
+      - name: Write job summary
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+          ARCHIVE_SIZE: ${{ steps.archive.outputs.archive_size }}
+          FILE_SERVER: ${{ inputs.file_server }}
+          REMOTE_PATH: ${{ inputs.remote_path }}
+        run: |
+          {
+            echo "### 离线镜像已上传"
+            echo
+            echo "- 文件：\`${ARCHIVE}\`"
+            echo "- 大小：\`${ARCHIVE_SIZE}\` bytes"
+            echo "- 服务器：\`${FILE_SERVER}\`"
+            echo "- 目录：\`${REMOTE_PATH}\`"
+            echo
+            echo "导入命令：\`zstd -dc ${ARCHIVE} | docker load\`"
+          } >> "$GITHUB_STEP_SUMMARY"
