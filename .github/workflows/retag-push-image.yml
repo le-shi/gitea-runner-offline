@@ -1,0 +1,143 @@
+name: Retag and push Docker image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_image:
+        description: "源镜像完整地址（oldTag），例如 ghcr.io/le-shi/gitea-runner:latest"
+        required: true
+        default: ghcr.io/le-shi/gitea-runner:latest
+        type: string
+      target_registry:
+        description: "目标 Registry 登录地址，不要包含 https://，例如 harbor.example.com:8443"
+        required: true
+        type: string
+      target_image:
+        description: "目标镜像完整地址（newTag），例如 harbor.example.com/library/gitea-runner:3.1.0-offline"
+        required: true
+        type: string
+      target_username:
+        description: "目标 Registry 认证用户；密码从 TARGET_REGISTRY_PASSWORD Secret 读取"
+        required: true
+        type: string
+      architecture:
+        description: "docker pull/tag/push 只复制所选的单一架构"
+        required: true
+        default: amd64
+        type: choice
+        options:
+          - amd64
+          - arm64
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  retag-and-push:
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 180
+    steps:
+      - name: Validate inputs and password Secret
+        shell: bash
+        env:
+          SOURCE_IMAGE: ${{ inputs.source_image }}
+          TARGET_REGISTRY: ${{ inputs.target_registry }}
+          TARGET_IMAGE: ${{ inputs.target_image }}
+          TARGET_USERNAME: ${{ inputs.target_username }}
+          TARGET_REGISTRY_PASSWORD: ${{ secrets.TARGET_REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          image_pattern='^[A-Za-z0-9._:-]+/[A-Za-z0-9._/-]+(:[A-Za-z0-9_.-]+|@sha256:[0-9a-f]{64})$'
+          [[ "$SOURCE_IMAGE" =~ $image_pattern ]] || {
+            echo "source_image must be a complete image reference with a tag or digest" >&2
+            exit 1
+          }
+          [[ "$TARGET_REGISTRY" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || {
+            echo "target_registry must be a registry host with an optional port" >&2
+            exit 1
+          }
+          [[ "$TARGET_IMAGE" =~ $image_pattern ]] || {
+            echo "target_image must be a complete image reference with a tag" >&2
+            exit 1
+          }
+          [[ "$TARGET_IMAGE" == "${TARGET_REGISTRY}/"* ]] || {
+            echo "target_image must begin with target_registry/" >&2
+            exit 1
+          }
+          [[ "$TARGET_IMAGE" != *@* ]] || {
+            echo "target_image must use a writable tag, not a digest" >&2
+            exit 1
+          }
+          [[ -n "$TARGET_USERNAME" ]] || {
+            echo "target_username must not be empty" >&2
+            exit 1
+          }
+          [[ -n "$TARGET_REGISTRY_PASSWORD" ]] || {
+            echo "Missing repository Secret: TARGET_REGISTRY_PASSWORD" >&2
+            exit 1
+          }
+
+      - name: Log in to source GHCR
+        if: startsWith(inputs.source_image, 'ghcr.io/')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull source image
+        shell: bash
+        env:
+          SOURCE_IMAGE: ${{ inputs.source_image }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          docker pull --platform "linux/${ARCHITECTURE}" "$SOURCE_IMAGE"
+          actual_arch="$(docker image inspect "$SOURCE_IMAGE" --format '{{.Architecture}}')"
+          [[ "$actual_arch" == "$ARCHITECTURE" ]]
+          docker image inspect "$SOURCE_IMAGE" --format 'source={{.RepoTags}} id={{.Id}} os={{.Os}} arch={{.Architecture}}'
+
+      - name: Log in to target Registry
+        shell: bash
+        env:
+          TARGET_REGISTRY: ${{ inputs.target_registry }}
+          TARGET_USERNAME: ${{ inputs.target_username }}
+          TARGET_REGISTRY_PASSWORD: ${{ secrets.TARGET_REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$TARGET_REGISTRY_PASSWORD" | \
+            docker login "$TARGET_REGISTRY" --username "$TARGET_USERNAME" --password-stdin
+
+      - name: Tag and push image
+        shell: bash
+        env:
+          SOURCE_IMAGE: ${{ inputs.source_image }}
+          TARGET_IMAGE: ${{ inputs.target_image }}
+        run: |
+          set -euo pipefail
+          docker tag "$SOURCE_IMAGE" "$TARGET_IMAGE"
+          docker push "$TARGET_IMAGE"
+          docker image inspect "$TARGET_IMAGE" --format 'target={{.RepoTags}} id={{.Id}} os={{.Os}} arch={{.Architecture}}'
+
+      - name: Write job summary
+        shell: bash
+        env:
+          SOURCE_IMAGE: ${{ inputs.source_image }}
+          TARGET_IMAGE: ${{ inputs.target_image }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          {
+            echo "### 镜像复制完成"
+            echo
+            echo "- 源镜像：\`${SOURCE_IMAGE}\`"
+            echo "- 目标镜像：\`${TARGET_IMAGE}\`"
+            echo "- 架构：\`linux/${ARCHITECTURE}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Log out from target Registry
+        if: always()
+        shell: bash
+        env:
+          TARGET_REGISTRY: ${{ inputs.target_registry }}
+        run: docker logout "$TARGET_REGISTRY" || true

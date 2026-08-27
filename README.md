@@ -203,6 +203,39 @@ sha256sum -c gitea-runner-3.1.0-offline-amd64.docker.tar.zst.sha256
 zstd -dc gitea-runner-3.1.0-offline-amd64.docker.tar.zst | docker load
 ```
 
+### 手工复制镜像到其他 Registry
+
+需要把 GHCR 镜像重新打标签并推送到 Harbor 或其他 Docker Registry 时，在 GitHub
+仓库的 **Actions** 页面手工运行 `Retag and push Docker image`。运行前配置仓库
+Secret `TARGET_REGISTRY_PASSWORD`，内容为目标 Registry 的认证密码或机器人令牌。
+
+手工运行时填写：
+
+- `source_image`：源镜像完整地址，即 `docker tag` 的 `oldTag`。
+- `target_registry`：执行 `docker login` 的服务器地址，不含 `https://` 和路径。
+- `target_image`：目标镜像完整地址，即 `docker tag` 的 `newTag`，必须以
+  `target_registry/` 开头。
+- `target_username`：目标 Registry 用户名。
+- `architecture`：要复制的单一架构，支持 AMD64 和 ARM64。
+
+密码不能作为 `workflow_dispatch` 普通输入，因为普通输入不是 Secret，可能保留在
+工作流运行记录和 API 数据中。工作流等效执行：
+
+```bash
+printf '%s' "$TARGET_REGISTRY_PASSWORD" |
+  docker login harbor.example.com --username robot-user --password-stdin
+docker pull --platform linux/amd64 ghcr.io/le-shi/gitea-runner:3.1.0-offline
+docker tag \
+  ghcr.io/le-shi/gitea-runner:3.1.0-offline \
+  harbor.example.com/library/gitea-runner:3.1.0-offline
+docker push harbor.example.com/library/gitea-runner:3.1.0-offline
+```
+
+该工作流按你的要求使用 `docker pull/tag/push`，因此一次只复制一个架构，不会创建
+多架构 manifest。需要双架构时分别运行 AMD64 和 ARM64，但不能把二者推送到同一个
+标签，否则后一次推送会覆盖前一次的标签。双架构目标镜像应使用不同架构标签，之后
+再单独合并 manifest。
+
 构建期允许联网下载并固化所有工具、Action 和依赖；成品验证阶段关闭网络：
 
 ```bash
