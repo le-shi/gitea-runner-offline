@@ -38,7 +38,7 @@ actions-github-script@v7|https://github.com/actions/github-script.git|60a0d83039
 astral-sh-setup-uv@v6|https://github.com/astral-sh/setup-uv.git|b75a909f75acd358c2196fb9a5f1299a9a8868a4|v6.7.0
 pnpm-action-setup@v4|https://github.com/pnpm/action-setup.git|a7487c7e89a18df4991f7f222e4898a00d66ddda|v4.1.0
 gradle-actions-setup-gradle@v4|https://github.com/gradle/actions.git|017a9effdb900e5b5b2fddfb590a105619dca3c3|v4.4.2
-dtolnay-rust-toolchain@stable|https://github.com/dtolnay/rust-toolchain.git|4360b52568e2003a75bf9bc1d59f33a8e3fc893c|stable
+dtolnay-rust-toolchain@stable|https://github.com/dtolnay/rust-toolchain.git|b725eda525362e7cf34af9a7243cac1e3f01a7ec|stable
 swatinem-rust-cache@v2|https://github.com/Swatinem/rust-cache.git|9d47c6ad4b02e050fd481d890b2ea34778fd09d6|v2.7.8
 docker-setup-qemu-action@v2|https://github.com/docker/setup-qemu-action.git|2b82ce82d56a2a04d2637cd93a637ae1b359c0a7|v2.2.0
 docker-setup-qemu-action@v3|https://github.com/docker/setup-qemu-action.git|c7c53464625b32c7a7e944ae62b3e17d2b600130|v3.7.0
