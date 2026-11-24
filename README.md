@@ -236,6 +236,32 @@ docker push harbor.example.com/library/gitea-runner:3.1.0-offline
 标签，否则后一次推送会覆盖前一次的标签。双架构目标镜像应使用不同架构标签，之后
 再单独合并 manifest。
 
+### 同步指定 vLLM 镜像到阿里云
+
+在 GitHub 仓库的 **Actions** 页面手工运行 **同步 vLLM 镜像到阿里云**
+（`.github/workflows/sync-vllm-to-aliyun.yml`）。该工作流仅手工触发，固定复制：
+
+```text
+ghcr.io/local-inference-lab/vllm:karmic-kraken-beta-20261016.2
+```
+
+目标沿用阿里云 Registry，使用 `gitea` 命名空间；将原始完整镜像地址中的 `/`
+替换为 `_`，保留原标签。默认目标为：
+
+```text
+crpi-a3l6m194vblqfo03.cn-hangzhou.personal.cr.aliyuncs.com/gitea/ghcr.io_local-inference-lab_vllm:karmic-kraken-beta-20261016.2
+```
+
+运行时确认 `target_registry` 并填写阿里云登录用户 `target_username`；密码复用已有
+仓库 Secret `TARGET_REGISTRY_PASSWORD`。目标命名空间和镜像仓库需预先存在，或允许
+该用户在推送时自动创建。GHCR 源镜像公开可读，无需额外配置源仓库凭据。
+
+该镜像压缩层总计约 12 GiB。工作流使用 `skopeo` 在 Registry 之间流式复制，
+不执行本地 Docker 解压或重建，保留源清单、架构和摘要；先读取源摘要，再按摘要复制，
+最后从阿里云重新读取清单并校验摘要。一旦复制或校验失败，工作流返回失败；重新运行
+可复用目标仓库已经接收的层。认证文件在任务结束时清理。只有真实运行成功，才表示
+本次镜像传输与摘要校验完成。
+
 构建期允许联网下载并固化所有工具、Action 和依赖；成品验证阶段关闭网络：
 
 ```bash

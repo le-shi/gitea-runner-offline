@@ -1,0 +1,102 @@
+name: 同步 vLLM 镜像到阿里云
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_registry:
+        description: "阿里云 Registry 地址，不含 https:// 和路径"
+        required: true
+        default: crpi-a3l6m194vblqfo03.cn-hangzhou.personal.cr.aliyuncs.com
+        type: string
+      target_username:
+        description: "阿里云 Registry 用户名；密码沿用 TARGET_REGISTRY_PASSWORD Secret"
+        required: true
+        type: string
+
+permissions: {}
+
+env:
+  SOURCE_IMAGE: ghcr.io/local-inference-lab/vllm:karmic-kraken-beta-20261016.2
+  TARGET_NAMESPACE: gitea
+
+jobs:
+  sync-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      TARGET_REGISTRY: ${{ inputs.target_registry }}
+      TARGET_USERNAME: ${{ inputs.target_username }}
+    steps:
+      - name: 校验目标地址和凭据
+        shell: bash
+        env:
+          TARGET_REGISTRY_PASSWORD: ${{ secrets.TARGET_REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "REGISTRY_AUTH_FILE=$RUNNER_TEMP/vllm-registry-auth.json" >> "$GITHUB_ENV"
+          [[ "$TARGET_REGISTRY" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.aliyuncs\.com$ ]] || {
+            echo "目标必须是阿里云 Registry 域名，不能包含协议、端口或路径" >&2
+            exit 1
+          }
+          [[ -n "${TARGET_USERNAME//[[:space:]]/}" ]] || {
+            echo "请填写阿里云 Registry 用户名" >&2
+            exit 1
+          }
+          [[ -n "$TARGET_REGISTRY_PASSWORD" ]] || {
+            echo "缺少仓库 Secret：TARGET_REGISTRY_PASSWORD" >&2
+            exit 1
+          }
+          # 仅替换路径分隔符，保留原始标签作为目标镜像标签。
+          target_image="${TARGET_REGISTRY}/${TARGET_NAMESPACE}/${SOURCE_IMAGE//\//_}"
+          echo "TARGET_IMAGE=$target_image" >> "$GITHUB_ENV"
+          echo "目标镜像：$target_image"
+
+      - name: 安装镜像复制工具
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo timeout 5m apt-get -o Acquire::Retries=0 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo timeout 5m apt-get -o Acquire::Retries=0 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends skopeo
+
+      - name: 登录阿里云 Registry
+        shell: bash
+        env:
+          TARGET_REGISTRY_PASSWORD: ${{ secrets.TARGET_REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$TARGET_REGISTRY_PASSWORD" |
+            skopeo --command-timeout 2m login --authfile "$REGISTRY_AUTH_FILE" --password-stdin \
+              --username "$TARGET_USERNAME" "$TARGET_REGISTRY"
+
+      - name: 复制镜像并校验摘要
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_manifest="$RUNNER_TEMP/vllm-source-manifest.json"
+          target_manifest="$RUNNER_TEMP/vllm-target-manifest.json"
+          skopeo --command-timeout 2m inspect --raw "docker://${SOURCE_IMAGE}" > "$source_manifest"
+          source_digest="$(skopeo manifest-digest "$source_manifest")"
+          # 固定本次源摘要，流式复制所有镜像清单与层，避免解压大镜像耗尽磁盘。
+          skopeo --command-timeout 150m copy --all --preserve-digests \
+            --authfile "$REGISTRY_AUTH_FILE" \
+            "docker://${SOURCE_IMAGE%:*}@${source_digest}" "docker://${TARGET_IMAGE}"
+          skopeo --command-timeout 2m inspect --raw --authfile "$REGISTRY_AUTH_FILE" \
+            "docker://${TARGET_IMAGE}" > "$target_manifest"
+          target_digest="$(skopeo manifest-digest "$target_manifest")"
+          [[ "$source_digest" == "$target_digest" ]] || {
+            echo "源与目标镜像摘要不一致，复制校验失败" >&2
+            exit 1
+          }
+          {
+            echo "### vLLM 镜像同步完成"
+            echo
+            echo "- 源镜像：\`${SOURCE_IMAGE}\`"
+            echo "- 目标镜像：\`${TARGET_IMAGE}\`"
+            echo "- 校验摘要：\`${target_digest}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 清理临时认证文件
+        if: always()
+        shell: bash
+        run: rm -f -- "$RUNNER_TEMP/vllm-registry-auth.json"
