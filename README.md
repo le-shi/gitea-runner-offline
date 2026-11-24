@@ -245,11 +245,11 @@ docker push harbor.example.com/library/gitea-runner:3.1.0-offline
 ghcr.io/local-inference-lab/vllm:karmic-kraken-beta-20261016.2
 ```
 
-目标沿用阿里云 Registry，使用 `gitea` 命名空间；将原始完整镜像地址中的 `/`
+目标沿用阿里云 Registry 和上次成功转推使用的 `gh-leshi` 命名空间；将原始完整镜像地址中的 `/`
 替换为 `_`，保留原标签。默认目标为：
 
 ```text
-crpi-a3l6m194vblqfo03.cn-hangzhou.personal.cr.aliyuncs.com/gitea/ghcr.io_local-inference-lab_vllm:karmic-kraken-beta-20261016.2
+crpi-a3l6m194vblqfo03.cn-hangzhou.personal.cr.aliyuncs.com/gh-leshi/ghcr.io_local-inference-lab_vllm:karmic-kraken-beta-20261016.2
 ```
 
 运行时确认 `target_registry` 并填写阿里云登录用户 `target_username`；密码复用已有

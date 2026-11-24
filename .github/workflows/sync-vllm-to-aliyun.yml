@@ -17,7 +17,7 @@ permissions: {}
 
 env:
   SOURCE_IMAGE: ghcr.io/local-inference-lab/vllm:karmic-kraken-beta-20261016.2
-  TARGET_NAMESPACE: gitea
+  TARGET_NAMESPACE: gh-leshi
 
 jobs:
   sync-image:
